@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <malloc.h>
+#include <error.h>
 
 /* Unix */
 #include <unistd.h>
@@ -24,55 +25,11 @@
 
 /* Application */
 #include "toolbox.h"
-
-#include <stdlib.h>
-#include <error.h>
-#include <argp.h>
+#include "common.h"
 
 #define DEBUG
 // #define TEST
 
-#define SUCCESS 0
-#define FAILURE -1
-
-// This goes to common.h
-enum actions {
-  NC,
-  OFF,
-  ON,
-  TOGGLE,
-  NO_ACTION 
-};
-
-const char action_names[][32] = {
-  "nc",
-  "off",
-  "on",
-  "toggle",
-  "no action" 
-};
-
-// unique device identifier format: <interface>+<vendor_id>:<product_id>+<serial_number>+<port>+<manufacturer string>
-struct device_identifier {
-  sds interface;
-  int vendor_id;
-  int product_id;
-  sds serial_number;
-  sds port;
-  sds manufacturer_string;
-};
-
-// List of devices
-struct device_list {
-  void * handle;
-  sds id;
-  sds group;
-  struct device_list *next;
-};
-
-
-/*---------------------------------------------------------------*/
-// Local definitions
 const char *argp_program_version = "rly 1.0";
 const char *argp_program_bug_address = "github.com/paragi/rly/issues";
 
@@ -100,21 +57,11 @@ struct arguments {
   enum actions action;
 };
 
-void print_arguments(struct arguments argument) {
-  printf("Argument interpretation:\n");
-  printf("  no arguments = %s\n", argument.no_arg ? "true" : "false");
-  printf("  list devices: %s\n", argument.list ? "true" : "false");
-  printf("  device identifier:\n");
-  printf("     interface:           %s\n", argument.id.interface); 
-  printf("     vendor id:           %04X:%04X\n", argument.id.vendor_id, argument.id.product_id); 
-  printf("     serial number:       %s\n", argument.id.serial_number); 
-  printf("     port:                %s\n", argument.id.port); 
-  printf("     manufacturer string: %s\n", argument.id.manufacturer_string); 
-  printf("  relay id: %d\n", argument.relay_id);
-  printf("  action: %s\n", action_names[argument.action]);
-
-}
-// This is where arguments are parsed, one at a time, as they occur
+/*
+  Parse arguments and options
+  
+  This is where arguments are parsed, one at a time, as they occur
+*/
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   /* Get the input argument from argp_parse, which we know is a pointer to our   structure. */
   struct arguments *argument = state->input;
@@ -215,9 +162,22 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-// XXX -> YYY -> abcd
+void print_arguments(struct arguments argument) {
+  printf("Argument interpretation:\n");
+  printf("  no arguments = %s\n", argument.no_arg ? "true" : "false");
+  printf("  list devices: %s\n", argument.list ? "true" : "false");
+  printf("  device identifier:\n");
+  printf("     interface:           %s\n", argument.id.interface); 
+  printf("     vendor id:           %04X:%04X\n", argument.id.vendor_id, argument.id.product_id); 
+  printf("     serial number:       %s\n", argument.id.serial_number); 
+  printf("     port:                %s\n", argument.id.port); 
+  printf("     manufacturer string: %s\n", argument.id.manufacturer_string); 
+  printf("  relay id: %d\n", argument.relay_id);
+  printf("  action: %s\n", action_names[argument.action]);
 
-int probe(struct device_identifier id, struct device_list ** device){
+}
+
+int probe_dummy(struct _device_identifier id, struct _device_list ** device){
   printf("  probe(%04X:%04X, %s, %s, %s)\n",
     id.vendor_id, 
     id.product_id,
@@ -226,20 +186,63 @@ int probe(struct device_identifier id, struct device_list ** device){
     id.manufacturer_string
   ); 
 
-  *device = malloc(sizeof(struct device_list)); 
-  (*device)->id = "Test device 1";
+  *device = malloc(sizeof(struct _device_list)); 
+  (*device)->id = "Dummy device 1";
   (*device)->group = "dailout";
+  (*device)->name = "dailout";
+  (*device)->group = "dailout";
+
   (*device)->next = NULL;
   device = &(*device)->next; 
 
-  *device = malloc(sizeof(struct device_list)); 
-  (*device)->id = "Test device 2";
+  *device = malloc(sizeof(struct _device_list)); 
+  (*device)->id = "Dummy device 2";
   (*device)->group = "dailout";
   (*device)->next = NULL;
   device = &(*device)->next; 
 
   return SUCCESS;
 }    
+/* 
+  probe for HID USB devices that match relay drivers.
+  When matched, add aan entry to the device list.
+*/   
+int probe_hidusb(struct _device_identifier id, struct _device_list ** device_list){
+
+  struct hid_device_info *hid_device, *first_hid_device;
+  struct _device_list *device_list_entry;
+  
+  // Get a list of USB HID devices (Linked with libusb-hidapi) 
+  first_hid_device = hid_device = hidusb_enumerate_match(id);
+  while (hid_device) {
+    do {
+      if ( (device_list_entry = recognize_nuvoton(hid_device)) )
+        break;
+
+    } while( 0 );
+
+    // Add generic information to the newly created list entry
+    if ( device_list_entry ) {
+      device_list_entry->id = sdscatprintf(sdsempty(),
+                "hidusb+%04X:%04X+%s+%s+%s",
+                hid_device->vendor_id,
+                hid_device->product_id,
+                hid_device->path,
+                hid_device->serial_number,
+                hid_device->manufacturer_string
+      ); 
+      device_list_entry->group = "dailout";
+      device_list_entry->next = NULL;
+      // Add entry to device list
+      (*device_list)->next = device_list_entry;
+      device_list = device_list_entry; 
+    }
+
+    hid_device = hid_device->next; 
+  }
+  hid_free_enumeration(first_hid_device);
+  return SUCCESS;
+}   
 
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
@@ -249,27 +252,29 @@ int main (int argc, char **argv) {
   struct arguments argument;
   struct device_list **first_entry, *device_list = NULL;
 
-
-
   memset(&argument,0,sizeof(argument));
   argp_parse (&argp, argc, argv, 0, 0, &argument);
   // print_arguments(argument);
 
   // Probe and make a list of mathched devices
   first_entry = &device_list;
-  if ( !argument.id.interface || !strcmp(argument.id.interface ? : "","hid") )
-    probe(argument.id, &device_list);
+  if ( !argument.id.interface || !strcmp(argument.id.interface ? : "","dummy") )
+    probe_dummy(argument.id, &device_list);
 
-  // Interact with relay
-  if (!argument.list) 
-    if ( argument.action )
-      ; // Set relay state
-    else
-      ; // read state of relays
+  if ( !argument.id.interface || !strcmp(argument.id.interface ? : "","hidusb") )
+    probe_hidusb(argument.id, &device_list);
 
   // List relays
   for( i = 0, device_list = *first_entry; device_list; i++) {
-    printf("device ID: %s - group: %s\n",device_list->id, device_list->group);
+    // Interact with relay
+    if (!argument.list) {
+      if ( argument.action )
+        ; // Set relay state
+      else
+        ; // read state of relays
+    }
+
+    printf("device ID: %s - group: %s\n", device_list->id, device_list->group);
     device_list = device_list->next;
   }
   if( i < 1 )
