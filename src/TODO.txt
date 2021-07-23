@@ -1,0 +1,23 @@
+to test
+
+- flere controllere
+- s option uden mellemrum
+- sainssmart disable når Nuvoton
+- demon mode
+- GPIO
+- make uden NUVOTON
+- Change size of serial strin i andre drivere.
+
+Hi Ondrey ??
+
+I have added a new module for the Nuvoton controller. 
+I have made it aware of port addresses, rather than devide nodes (that changes when devices are reconnected)
+
+It is tempthing to make other changes, but I don't have the meens to test it all.
+So I have tried to minimise changes, to the other parts.
+The main change is that I use the serial number string, as a more generic unique identification string.
+
+I might have other improvements later, 
+Please accept this pulle request, and let me know, if anything needs fixing. 
+
+
