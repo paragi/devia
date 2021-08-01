@@ -558,7 +558,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 
 	struct hid_device_info *root = NULL; /* return object */
 	struct hid_device_info *cur_dev = NULL;
-printf("Unsing the local hid.c file"); 
+printf("Using the local copy of hid.c as HIDAPI\n"); 
 	if(hid_init() < 0)
 		return NULL;
 

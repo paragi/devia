@@ -93,7 +93,7 @@ struct HID_repport
 // Convert int to binary string
 char *int2bin(int value ,int len, char *buffer, int buf_size);
 
-void print_hid_device_info(struct hid_device_info * dev_info){
+void print_hid_device_info2(struct hid_device_info * dev_info){
   printf("Device info:\n");
   printf("  Vendor: %04X:%04X\n",dev_info->vendor_id, dev_info->product_id);
   printf("  Path: %s\n",dev_info->path);
@@ -146,7 +146,7 @@ struct hid_device_info * hid_enumerate_match(
         && !wcscmp(wstr, device->manufacturer_string) ) 
           break;
 
-      print_hid_device_info(device);
+      print_hid_device_info2(device);
       
       returned_list = returned_list->next = malloc(sizeof(struct hid_device_info));
       memcpy(returned_list,device,sizeof(struct hid_device_info));
