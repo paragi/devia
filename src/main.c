@@ -162,6 +162,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+
 void print_arguments(struct arguments argument) {
   printf("Argument interpretation:\n");
   printf("  no arguments = %s\n", argument.no_arg ? "true" : "false");
