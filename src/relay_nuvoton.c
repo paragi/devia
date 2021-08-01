@@ -76,9 +76,6 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #define DEBUG
 // #define TEST
 
-#define SUCCESS 0
-#define FAILURE -1
-
 struct HID_repport 
 {
   uint8_t  cmd;          // command READ/WRITE  
@@ -92,7 +89,7 @@ struct HID_repport
 };
 
 
-static int get_nuvoton(hid_device *handle, uint16_t *bitmap)
+static int get_nuvoton(hid_device *handle, int *relay_state) 
 {
   int i;
   struct HID_repport hid_msg;
@@ -125,21 +122,20 @@ static int get_nuvoton(hid_device *handle, uint16_t *bitmap)
     return FAILURE;
 
   // Big endian
-  *bitmap = hid_msg.byte2 + (hid_msg.byte1 << 8);
+  *relay_state = hid_msg.byte2 + (hid_msg.byte1 << 8);
 
   #ifdef DEBUG
     printf("Recieved HID repport from device: "); 
     for (i=0; i<sizeof(struct HID_repport); i++) 
       printf("%02X ", *(((uint8_t*)&hid_msg)+i)); 
     printf("\n"); 
-   printf("Relay state = 0x%04x\n", *bitmap); 
+   printf("Relay state = 0x%04x\n", *relay_state); 
   #endif
 
   return SUCCESS;
 }
 
-static int set_nuvoton(hid_device *handle, uint16_t *bitmap) 
-{
+static int set_nuvoton(hid_device *handle, int *relay_state) {
   struct HID_repport  hid_msg;
   int i;
   uint16_t checksum=0;
@@ -147,8 +143,8 @@ static int set_nuvoton(hid_device *handle, uint16_t *bitmap)
   // Create HID repport set relays Request
   memset(&hid_msg, 0x00, sizeof(struct HID_repport));
   // Little endian
-  hid_msg.byte1 = *bitmap & 0x00ff;
-  hid_msg.byte2 = (*bitmap & 0xff00) >> 8;
+  hid_msg.byte1 = *relay_state & 0x00ff;
+  hid_msg.byte2 = (*relay_state & 0xff00) >> 8;
   hid_msg.cmd = 0xC3;
   hid_msg.len = sizeof(struct HID_repport) - 2;
   memcpy(hid_msg.signature, "HIDC", 4);
@@ -162,7 +158,7 @@ static int set_nuvoton(hid_device *handle, uint16_t *bitmap)
     printf("Sending HID repport to device:    "); 
     for (i=0; i<sizeof(struct HID_repport); i++) printf("%02X ", *(((uint8_t*)&hid_msg)+i)); 
       printf("\n"); 
-    printf("Set relays = 0x%04x\n", *bitmap);
+    printf("Set relays = 0x%04x\n", *relay_state);
   #endif
 
   if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) < 0)
@@ -171,24 +167,60 @@ static int set_nuvoton(hid_device *handle, uint16_t *bitmap)
   return SUCCESS;
 }
 
-int recognize_nuvoton(struct hid_device_info *hid_dev_info, struct _device_list *device_list) {
-  if ( hid_dev_info->vendor_id == 0x0416
-    && hid_dev_info->product_id == 0x5020
-    && hid_dev_info->manufacturer_string == "Nuvoton" ){
+int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *reply) {
+  int relay_id = 0;
+  int relay_state = -1;
+  int return_code = SUCCESS;
+  hid_device *handle;
 
-    // Create a new entry in device list
-    device_list = malloc(sizeof(struct _device_list)); 
-    device_list->next = NULL;
-    
-    // Provide device information
-    device_list->get = get_nuvoton;
-    device_list->set = set_nuvoton;
-    device_list->name = sdsprintf(sdsempty(), "Nuvoton %s", hid_device_info->path);
-    for ( int i =1; i <= 16; i++) 
-      device_list->label[i] = sdscatprintf(sdsempty(), "Relay %d", i);
-
-    return SUCCESS;     
+  if ( (handle = hid_open_path(device->path)) > 0) {
+    perror("Unable to open HID API device");
+    return FAILURE;      
   }
 
-  return FAILURE;
+  if( attribute && strcmp(strtolower(attribute),"all") )
+    relay_id = strtol(attribute,NULL,10);  
+
+  return_code = get_nuvoton(handle, &relay_state); 
+
+  if (action) {
+    int mask = attribute ? 1<<(relay_id - 1) : 0xff;
+    if (!strcmp(strtolower(action), "off") )
+      relay_state &= ~mask; 
+    if (!strcmp(strtolower(action), "on") )
+      relay_state |= mask; 
+    if (!strcmp(strtolower(action), "toggle") )
+      relay_state ^= ~relay_state & mask;
+    return_code = set_nuvoton(handle, &relay_state); 
+  } 
+
+  if(attribute > 0 )
+    *reply = (1<<relay_id) & relay_state ? sdsnew("on") : sdsnew("off");
+  else      
+    *reply = sdsint2bin(relay_state + 0LL,16);
+
+  hid_close(handle);
+
+  return return_code;
 }
+
+int recognize_nuvoton(struct hid_device_info *hid_dev_info, struct _device_list *device) {
+  if ( hid_dev_info->vendor_id == 0x0416
+    && hid_dev_info->product_id == 0x5020
+    && !wcscmp(hid_dev_info->manufacturer_string,L"Nuvoton" )){
+
+    // Create a new entry in device list
+    device = malloc(sizeof(struct _device_list)); 
+    device->next = NULL;
+    
+    // Provide device information
+    device->action = action_nuvoton;
+    device->name = sdscatprintf(sdsempty(), "Nuvoton %s", hid_dev_info->path);
+
+    return true;     
+  }
+
+  return false;
+}
+
+;

@@ -72,6 +72,7 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 /* Application */
 #include "toolbox.h"
 #include "common.h"
+#include "relay_nuvoton.h"
 
 #define DEBUG
 // #define TEST
@@ -98,15 +99,19 @@ struct hid_device_info * hidusb_enumerate_match(
 ){
   struct hid_device_info *device, *returned_list, empty_record;
   wchar_t wstr[256];
-  
+  puts("#2");
+  printf("%X:%X\n",vendor_id,product_id);
   // Make a startingpoint for linked list
   returned_list = empty_record.next = &empty_record;
 
-  if ((device = hid_enumerate(vendor_id, product_id)) == NULL) // Test with 0 ,0 
+  if (! (device = hid_enumerate(vendor_id, product_id))) // Test with 0 ,0 
     return NULL;  
+  puts("#3");
 
   if (device->product_string == NULL || device->path == NULL)
     return NULL;  
+      print_hid_device_info(device);
+  puts("#2");
   
   while (device ) {
     do {
@@ -144,3 +149,70 @@ struct hid_device_info * hidusb_enumerate_match(
     return NULL;
   return empty_record.next;
 }
+
+/* 
+  probe for HID USB devices that match relay drivers.
+  When matched, add aan entry to the device list.
+*/   
+int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
+
+  struct hid_device_info *hid_device, *first_hid_device;
+  sds * sds_array;
+  int length;
+  int vendor_id = 0, product_id = 0;
+  sds serial_number = sdsempty();
+  sds manufacturer_string = sdsempty();
+
+  if( verbose )
+    printf("probing HID-USB devices( %s)\n", id.device_id ? : "empty");
+
+  if(id.device_id){
+    puts("#1");
+    sds_array = sdssplitlen(id.device_id,sdslen(id.device_id), ":", 1, &length);
+    if (length >0 )  
+      vendor_id =strtol(sds_array[0],NULL,16);
+    if (length >1 )
+      product_id =strtol(sds_array[1],NULL,16);
+    if (length >2 )
+      serial_number = sdsnew(sds_array[2]);  
+    if (length >3 )
+      manufacturer_string = sdsnew(sds_array[3]);
+    sdsfreesplitres(sds_array, length); 
+  }
+
+  // Get a list of USB HID devices (Linked with libusb-hidapi) 
+  first_hid_device = hid_device = hidusb_enumerate_match(vendor_id, product_id, serial_number, manufacturer_string, id.port);
+  printf("hid list %p\n",hid_device);
+  while (hid_device) {
+    if ( verbose ) printf("  Found device at %s",hid_device->path);
+    do {
+      if ( (recognize_nuvoton(hid_device, *device )) )
+        break;
+      // Put new hid device recognizers here
+
+    } while( 0 );
+
+    // Add generic information to the newly created list entry
+    if ( device && *device ) {
+      (*device)->id = sdscatprintf(sdsempty(),
+                "hidusb+%04X:%04X+%s+%ls+%ls",
+                hid_device->vendor_id,
+                hid_device->product_id,
+                hid_device->path,
+                hid_device->serial_number,
+                hid_device->manufacturer_string
+      ); 
+      (*device)->group = "dailout";
+      device = &(*device)->next; 
+      if ( verbose ) 
+        printf("-- Recognized as %s\n",(*device)->name);
+
+    } else if ( verbose ) 
+      printf("-- Not recognized\n");
+
+    hid_device = hid_device->next; 
+  }
+  hid_free_enumeration(first_hid_device);
+  return SUCCESS;
+}   
+

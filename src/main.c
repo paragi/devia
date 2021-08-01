@@ -26,35 +26,53 @@
 /* Application */
 #include "toolbox.h"
 #include "common.h"
+#include "hidusb.h"
 
 #define DEBUG
 // #define TEST
 
 const char *argp_program_version = "rly 1.0";
 const char *argp_program_bug_address = "github.com/paragi/rly/issues";
+int verbose = false;
 
 /* Program documentation. */
 static char doc[] =
   "rly -- command line relay control program.\n";
 
 /* A description of the arguments we accept. */
-static char args_doc[] = "rly [-l --list] [<unique identifier> [,<relay|all|0 > [,<action (on|off|toggle)>]]]";
+static char args_doc[] = "rly [-l --list] [<unique identifier> [,<attribute|all|0 > [,<action (on|off|toggle)>]]]\n\n"\
+  "rly controlles one or more devices, specified by the identifier, by performing an action to an attribute, specific to the device.\n"\
+  "or rly can list devices available (with the -l option)\n\n"
+  "  Unique identifyer: <device type>&<device identifier>&<port>&<device path>\n"\
+  "    Device type: supported types are hidusb|gpio|usb|tty\n"\
+  "    Device identifier: hidusb: <vendor id>:<product id>: <serial number>,manufacturer string>\n"\
+  "                       gpio:   pin<n>\n"\
+  //"                       usb:    <vendor id>:<product id>: <serial number>,manufacturer string>\n"
+  //"                       tty:    <speed>:<bits>:<stop bits>\n"
+  "    port: device specific\n"\
+  "    device path:  path to device file. ex: /dev/tty2\n"\
+  "  Attribute: typically a number or a name of a device function to interact with\n"\
+  "  action: something to do to the attribute ex: on|off\n\n"
+  "example: rly hidusb&0416:5020::Nuvoton&& 3 on"
+  ;
 
-/* Keys for options without short-options. */
+  /* Keys for options without short-options. */
 #define OPT_ABORT  1            /* –abort */
 
 /* The options we understand. */
 static struct argp_option options[] = {
-  {"list",  'l', 0,       0, "List devices" },
+  {"list",    'l', 0, 0, "List devices" },
+  {"verbose", 'v',0,0,"Verbose readout"},
   { 0 }
 };
 // Used by main to communicate with parse_opt. 
 struct arguments {
-  int list;       // ‘-l’
+  int list;       // -l
+  int verbose;    // -v
   int no_arg;
-  struct device_identifier id;
-  int relay_id;
-  enum actions action;
+  struct _device_identifier id;
+  char * attribute;
+  char * action;
 };
 
 /*
@@ -67,21 +85,22 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   struct arguments *argument = state->input;
 
   switch (key) {
-    case 'l': case 's':
+    case 'l': 
       argument->list = 1;
       break;
-  
+    case 'v': case 'd':
+      verbose = argument->verbose = true;
+      break;
     case ARGP_KEY_ARG:
-        /* There are remaining arguments not parsed by any parser, which may be found
-       starting at (STATE->argv + STATE->next).  If success is returned, but
-       STATE->next left untouched, it's assumed that all arguments were consume,
-       otherwise, the parser should adjust STATE->next to reflect any arguments
-       consumed.  */
+      /* There are remaining arguments not parsed by any parser, which may be found
+      starting at (STATE->argv + STATE->next).  If success is returned, but
+      STATE->next left untouched, it's assumed that all arguments were consume,
+      otherwise, the parser should adjust STATE->next to reflect any arguments
+      consumed.  */
       switch (state->arg_num) {
         case 0: { // split unique device identifier 
-          int length, length2;
-          sds *sds_array, *sds_array2;
-          sds_array = sdssplitlen(arg,strlen(arg), "+", 1, &length);
+          int length;
+          sds * sds_array = sdssplitlen(arg,strlen(arg), "+", 1, &length);
 
           /*printf("unique device identifier Array = {\n");
           for (int i = 0; i < length; i++)
@@ -92,36 +111,25 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
             if(length < 1) break;
             argument->id.interface = sdsnew(sds_array[0]);
             if(length < 2) break;
-            sds_array2 = sdssplitlen(sds_array[1],sdslen(sds_array[1]), ":", 1, &length2);
-            if (length2 >0)  
-              argument->id.vendor_id =strtol(sds_array2[0],NULL,16);
-            if (length2 >1)  
-              argument->id.product_id = strtol(sds_array2[1],NULL,16);
-            sdsfreesplitres(sds_array2, length2); 
+            argument->id.device_id = sdsnew(sds_array[1]);
             if(length < 3) break; 
-            argument->id.serial_number = sdsnew(sds_array[2]);
+            argument->id.port = sdsnew(sds_array[2]);            
             if(length < 4) break; 
-            argument->id.port = sdsnew(sds_array[3]);
-            if(length < 5) break; 
-            argument->id.manufacturer_string = sdsnew(sds_array[4]);
+            argument->id.device_path = sdsnew(sds_array[3]);
           }while ( 0 );
           sdsfreesplitres(sds_array, length); 
           break;
         }
         
-        case 1: // relay numner / id
-          if( !strcmp(strtolower(arg),"all") )
-            argument->relay_id = 0;
-          else
-            argument->relay_id = strtol(arg,NULL,10);  
+        case 1: // Attribute to operate 
+          argument->attribute = arg;
+          strtolower(argument->attribute);
           break;
 
         case 2: // Action
-          for (size_t i = OFF; i <= NO_ACTION; i++) {
-            argument->action = i;
-            if (!strcmp(strtolower(arg), action_names[i])) 
-              break;
-          }
+          argument->action = arg;
+          strtolower(argument->action);
+          break;
       }  
       break;
 
@@ -173,86 +181,48 @@ void print_arguments(struct arguments argument) {
   printf("     serial number:       %s\n", argument.id.serial_number); 
   printf("     port:                %s\n", argument.id.port); 
   printf("     manufacturer string: %s\n", argument.id.manufacturer_string); 
-  printf("  relay id: %d\n", argument.relay_id);
-  printf("  action: %s\n", action_names[argument.action]);
+  printf("  Attribute: %s\n", argument.attribute);
+  printf("  action: %s\n", argument.action);
 
 }
 
 int probe_dummy(struct _device_identifier id, struct _device_list ** device){
-  printf("  probe(%04X:%04X, %s, %s, %s)\n",
-    id.vendor_id, 
-    id.product_id,
-    id.serial_number,
-    id.port,
-    id.manufacturer_string
-  ); 
 
+  if ( verbose )
+    printf("Probing dummy devices (%s)\n", id.device_id ? : "empty" );
+  
+  if ( verbose ) printf("  Found device ");
   *device = malloc(sizeof(struct _device_list)); 
   (*device)->id = "Dummy device 1";
   (*device)->group = "dailout";
-  (*device)->name = "dailout";
-  (*device)->group = "dailout";
+  (*device)->name = "Dummy device";
 
   (*device)->next = NULL;
+  printf("-- Recognized as %s\n",(*device)->name);
   device = &(*device)->next; 
 
+  if ( verbose ) printf("  Found device ");
   *device = malloc(sizeof(struct _device_list)); 
   (*device)->id = "Dummy device 2";
   (*device)->group = "dailout";
+  (*device)->name = "Dummy device";
+
   (*device)->next = NULL;
+  printf("-- Recognized as %s\n",(*device)->name);
   device = &(*device)->next; 
 
   return SUCCESS;
 }    
-/* 
-  probe for HID USB devices that match relay drivers.
-  When matched, add aan entry to the device list.
-*/   
-int probe_hidusb(struct _device_identifier id, struct _device_list ** device_list){
-
-  struct hid_device_info *hid_device, *first_hid_device;
-  struct _device_list *device_list_entry;
-  
-  // Get a list of USB HID devices (Linked with libusb-hidapi) 
-  first_hid_device = hid_device = hidusb_enumerate_match(id);
-  while (hid_device) {
-    do {
-      if ( (device_list_entry = recognize_nuvoton(hid_device)) )
-        break;
-
-    } while( 0 );
-
-    // Add generic information to the newly created list entry
-    if ( device_list_entry ) {
-      device_list_entry->id = sdscatprintf(sdsempty(),
-                "hidusb+%04X:%04X+%s+%s+%s",
-                hid_device->vendor_id,
-                hid_device->product_id,
-                hid_device->path,
-                hid_device->serial_number,
-                hid_device->manufacturer_string
-      ); 
-      device_list_entry->group = "dailout";
-      device_list_entry->next = NULL;
-      // Add entry to device list
-      (*device_list)->next = device_list_entry;
-      device_list = device_list_entry; 
-    }
-
-    hid_device = hid_device->next; 
-  }
-  hid_free_enumeration(first_hid_device);
-  return SUCCESS;
-}   
 
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
-int main (int argc, char **argv) {
+int cmain (int argc, char **argv) {
   int i;
   struct arguments argument;
-  struct device_list **first_entry, *device_list = NULL;
+  struct _device_list **first_entry, *device_list = NULL;
 
+  // Parse arguments
   memset(&argument,0,sizeof(argument));
   argp_parse (&argp, argc, argv, 0, 0, &argument);
   // print_arguments(argument);
@@ -266,6 +236,7 @@ int main (int argc, char **argv) {
     probe_hidusb(argument.id, &device_list);
 
   // List relays
+  if ( verbose ) puts("----------------------------------------------------------------------");
   for( i = 0, device_list = *first_entry; device_list; i++) {
     // Interact with relay
     if (!argument.list) {
