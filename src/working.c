@@ -73,7 +73,7 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #include "toolbox.h"
 
 #define DEBUG
-// #define TEST
+#define TEST
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -89,6 +89,7 @@ struct HID_repport
   uint8_t  chk_lsb;      // LSB checksum 
   uint8_t  chk_msb;      // MSB checksum 
 };
+
 
 // Convert int to binary string
 char *int2bin(int value ,int len, char *buffer, int buf_size);

@@ -216,7 +216,7 @@ int probe_dummy(struct _device_identifier id, struct _device_list ** device){
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
-int main (int argc, char **argv) {
+int cmain (int argc, char **argv) {
   int i;
   struct arguments argument;
   struct _device_list **first_entry, *device_list = NULL;

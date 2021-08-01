@@ -99,15 +99,19 @@ struct hid_device_info * hidusb_enumerate_match(
 ){
   struct hid_device_info *device, *returned_list, empty_record;
   wchar_t wstr[256];
-  
+  puts("#2");
+  printf("%X:%X\n",vendor_id,product_id);
   // Make a startingpoint for linked list
   returned_list = empty_record.next = &empty_record;
 
-  if ((device = hid_enumerate(vendor_id, product_id)) == NULL) // Test with 0 ,0 
+  if (! (device = hid_enumerate(vendor_id, product_id))) // Test with 0 ,0 
     return NULL;  
+  puts("#3");
 
   if (device->product_string == NULL || device->path == NULL)
     return NULL;  
+      print_hid_device_info(device);
+  puts("#2");
   
   while (device ) {
     do {
@@ -163,6 +167,7 @@ int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
     printf("probing HID-USB devices( %s)\n", id.device_id ? : "empty");
 
   if(id.device_id){
+    puts("#1");
     sds_array = sdssplitlen(id.device_id,sdslen(id.device_id), ":", 1, &length);
     if (length >0 )  
       vendor_id =strtol(sds_array[0],NULL,16);
@@ -177,11 +182,13 @@ int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
 
   // Get a list of USB HID devices (Linked with libusb-hidapi) 
   first_hid_device = hid_device = hidusb_enumerate_match(vendor_id, product_id, serial_number, manufacturer_string, id.port);
+  printf("hid list %p\n",hid_device);
   while (hid_device) {
     if ( verbose ) printf("  Found device at %s",hid_device->path);
     do {
       if ( (recognize_nuvoton(hid_device, *device )) )
         break;
+      // Put new hid device recognizers here
 
     } while( 0 );
 
