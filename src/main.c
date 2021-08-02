@@ -40,7 +40,7 @@ static char doc[] =
  "devia  [<options>] [<identifier> [<attribute of device> [<action>]]]\n"
   "\n"
   "devia (Device interact) Interacts with one or more attached devices.\n"
-  "\n"
+  "\n "
   "  <identifyer>: Is a device specific concatanated key, used to identify the  \n"
   "            device. Is is a key consisting of \n"
   "            <interface>&<device identifier>&<port>&<device path> \n"
