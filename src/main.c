@@ -29,67 +29,104 @@
 #include "hidusb.h"
 
 #define DEBUG
-// #define TEST
 
-const char *argp_program_version = "rly 1.0";
-const char *argp_program_bug_address = "github.com/paragi/rly/issues";
-int verbose = false;
+int info = false; // If set, output information usefull to tinkeres and  developers. 
+
+const char *argp_program_version = "Device interact version 1.0  Paragi 2021.";
+const char *argp_program_bug_address = "github.com/paragi/devia/issues.\nDon't hesitate to write a bug repport or feature request ect";
 
 /* Program documentation. */
 static char doc[] =
-  "rly -- command line relay control program.\n";
+ "devia  [<options>] [<identifier> [<attribute of device> [<action>]]]\n"
+  "\n"
+  "devia (Device interact) Interacts with one or more attached devices.\n"
+  "\n"
+  "  <identifyer>: Is a device specific concatanated key, used to identify the  \n"
+  "            device. Is is a key consisting of \n"
+  "            <interface>&<device identifier>&<port>&<device path> \n"
+  "            Each part is separated with a '&'. and can be empty or the end \n"
+  "            ommittet.\n"
+  "       <interface>: Is the type of interfaces used for the device. ex. usb,  \n"
+  "            gpio, serial, hidusb\n"
+  "       <Device identifier>: is specific to the interface type. ex: hidusb:\n"
+  "            <vendor id>:<product id>:<serial number>:<manufacturer string>\n"
+  "       <port>: Is a string that describe the port/bus, the device is \n"
+  "            attached to - as the kernel sees it. (sysfs)\n"
+  "       <device path>: Is the path to the device as a kernal file.\n"
+  "\n"    
+  "  <Attribute>: is device specific. ex. a relay number, address or other \n"
+  "            attrubute of the device.\n"
+  "  <action>: Is device specific. it describes what is to be done to it. Ex: on\n" 
+  "            off, toggle, or other value\n"
 
-/* A description of the arguments we accept. */
-static char args_doc[] = "rly [-l --list] [<unique identifier> [,<attribute|all|0 > [,<action (on|off|toggle)>]]]\n\n"\
-  "rly controlles one or more devices, specified by the identifier, by performing an action to an attribute, specific to the device.\n"\
-  "or rly can list devices available (with the -l option)\n\n"
-  "  Unique identifyer: <device type>&<device identifier>&<port>&<device path>\n"\
-  "    Device type: supported types are hidusb|gpio|usb|tty\n"\
-  "    Device identifier: hidusb: <vendor id>:<product id>: <serial number>,manufacturer string>\n"\
-  "                       gpio:   pin<n>\n"\
-  //"                       usb:    <vendor id>:<product id>: <serial number>,manufacturer string>\n"
-  //"                       tty:    <speed>:<bits>:<stop bits>\n"
-  "    port: device specific\n"\
-  "    device path:  path to device file. ex: /dev/tty2\n"\
-  "  Attribute: typically a number or a name of a device function to interact with\n"\
-  "  action: something to do to the attribute ex: on|off\n\n"
-  "example: rly hidusb&0416:5020::Nuvoton&& 3 on"
+  "\n"
+  "  Note: \n"
+  "    - If the <identifier> is ambigious, truncated or missing, it is treated \n"
+  "      as a wildcard, and will apply actions to all matching devices.\n"
+  "    - if <attribute> (and <action>)is omitted, it is interpreted as a general\n"
+  "      status request.\n"
+  "    - if <action> is omitted, it is interpretted as a read request, for the\n"
+  "      specified attrubute.\n" 
+  "    - If a device is interacted with, it is claimed (if posible). Other \n"
+  "      process claims, are abandoned.\n"
+  "    - Don't use root priviliges, unless for testing porpuses. It is a \n"
+  "      serious security risc. (see documenation on how to setup)\n"
+  "\n"
+  "  Examples:\n"
+  "    Set relay 3 = ON, on a Nuvoton HID USB relay controler:\n"
+  "       devia hidusb&0416:5020::Nuvoton&& 3 on\n"     
+  "\n"
+  "    Read state of input pin 4 on GPIO:\n"
+  "       devia gpio&pin4 \n"
+  "\n"
+  "Documentation on https://github.com/paragi/devia.\n"
+  "\n"
   ;
+
+/* A description of the arguments */
+static char args_doc[] = "[<identifier> [<attribute of device> [<action>]]]";
 
   /* Keys for options without short-options. */
 #define OPT_ABORT  1            /* –abort */
 
-/* The options we understand. */
+/* The options*/
 static struct argp_option options[] = {
-  {"list",    'l', 0, 0, "List devices" },
-  {"verbose", 'v',0,0,"Verbose readout"},
+  // {NAME, KEY, ARG, FLAGS, DOC} see: https://www.gnu.org/software/libc/manual/html_node/Argp-Option-Vectors.html
+  {"list",      'l', 0, 0, "List devices" },
+  {"info",      'i', 0, 0, "info readout"},
+  {"supported", 's', 0, 0, "List supported devices"},
   { 0 }
 };
+
 // Used by main to communicate with parse_opt. 
 struct arguments {
   int list;       // -l
-  int verbose;    // -v
+  int info;    // -i
+  int version;    // -v
+  int list_supported_devices; // -s
   int no_arg;
   struct _device_identifier id;
   char * attribute;
   char * action;
 };
 
-/*
-  Parse arguments and options
-  
-  This is where arguments are parsed, one at a time, as they occur
-*/
+// Parse arguments and options. Arguments are parsed, one at a time, as they occur
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   /* Get the input argument from argp_parse, which we know is a pointer to our   structure. */
   struct arguments *argument = state->input;
 
   switch (key) {
     case 'l': 
-      argument->list = 1;
+      argument->list = true;
       break;
-    case 'v': case 'd':
-      verbose = argument->verbose = true;
+    case 'v': 
+      argument->version = true;
+      break;
+    case 'i':
+      info = argument->info = true;
+      break;
+    case 's':
+      argument->list_supported_devices = true;
       break;
     case ARGP_KEY_ARG:
       /* There are remaining arguments not parsed by any parser, which may be found
@@ -100,7 +137,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       switch (state->arg_num) {
         case 0: { // split unique device identifier 
           int length;
-          sds * sds_array = sdssplitlen(arg,strlen(arg), "+", 1, &length);
+          sds * sds_array = sdssplitlen(arg,strlen(arg), "&", 1, &length);
 
           /*printf("unique device identifier Array = {\n");
           for (int i = 0; i < length; i++)
@@ -148,12 +185,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       /* Passed in before any parsing is done.  Afterwards, the values of each
          element of the CHILD_INPUT field, if any, in the state structure is
          copied to each child's state to be the initial value of the INPUT field.  */
-      // argp_usage (state);
+      argp_usage (state);
       argument->no_arg = true;
-      if( !argument->list ) {
-        argument->list = true;
-        printf("%s\nUse option -l to avoid this message\n", args_doc);
-      }
     case ARGP_KEY_INIT:
       /* Use after all other keys, including SUCCESS & END.  */
     case ARGP_KEY_FINI:
@@ -170,45 +203,44 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-
 void print_arguments(struct arguments argument) {
   printf("Argument interpretation:\n");
   printf("  no arguments = %s\n", argument.no_arg ? "true" : "false");
   printf("  list devices: %s\n", argument.list ? "true" : "false");
   printf("  device identifier:\n");
-  printf("     interface:           %s\n", argument.id.interface); 
-  printf("     vendor id:           %04X:%04X\n", argument.id.vendor_id, argument.id.product_id); 
-  printf("     serial number:       %s\n", argument.id.serial_number); 
-  printf("     port:                %s\n", argument.id.port); 
-  printf("     manufacturer string: %s\n", argument.id.manufacturer_string); 
+  printf("     interface:   %s\n", argument.id.interface); 
+  printf("     device id:   %s\n", argument.id.device_id); 
+  printf("     port:        %s\n", argument.id.port); 
+  printf("     device path: %s\n", argument.id.device_path); 
   printf("  Attribute: %s\n", argument.attribute);
   printf("  action: %s\n", argument.action);
-
 }
 
 int probe_dummy(struct _device_identifier id, struct _device_list ** device){
 
-  if ( verbose )
+  if ( info )
     printf("Probing dummy devices (%s)\n", id.device_id ? : "empty" );
   
-  if ( verbose ) printf("  Found device ");
+  if ( info ) printf("  Found device ");
   *device = malloc(sizeof(struct _device_list)); 
   (*device)->id = "Dummy device 1";
-  (*device)->group = "dailout";
+  (*device)->group = "no group";
   (*device)->name = "Dummy device";
 
   (*device)->next = NULL;
-  printf("-- Recognized as %s\n",(*device)->name);
+  if ( info )
+    printf("-- Recognized as %s\n",(*device)->name);
   device = &(*device)->next; 
 
-  if ( verbose ) printf("  Found device ");
+  if ( info ) printf("  Found device ");
   *device = malloc(sizeof(struct _device_list)); 
   (*device)->id = "Dummy device 2";
-  (*device)->group = "dailout";
+  (*device)->group = "no group";
   (*device)->name = "Dummy device";
 
   (*device)->next = NULL;
-  printf("-- Recognized as %s\n",(*device)->name);
+  if ( info )
+    printf("-- Recognized as %s\n",(*device)->name);
   device = &(*device)->next; 
 
   return SUCCESS;
@@ -217,7 +249,7 @@ int probe_dummy(struct _device_identifier id, struct _device_list ** device){
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
-int cmain (int argc, char **argv) {
+int main (int argc, char **argv) {
   int i;
   struct arguments argument;
   struct _device_list **first_entry, *device_list = NULL;
@@ -225,7 +257,22 @@ int cmain (int argc, char **argv) {
   // Parse arguments
   memset(&argument,0,sizeof(argument));
   argp_parse (&argp, argc, argv, 0, 0, &argument);
-  // print_arguments(argument);
+  if ( info ) print_arguments(argument);
+
+  if ( argument.no_arg && !argument.list) 
+    // Usages has been printed
+    puts("#!");
+    exit(0);
+
+  if ( argument.list_supported_devices ) {
+    puts("Supported devices:");
+    exit(0);
+  }
+
+  if ( argument.version ) {
+    printf("devia version %s\n", argp_program_version);
+    exit(0);
+  }
 
   // Probe and make a list of mathched devices
   first_entry = &device_list;
@@ -236,7 +283,7 @@ int cmain (int argc, char **argv) {
     probe_hidusb(argument.id, &device_list);
 
   // List relays
-  if ( verbose ) puts("----------------------------------------------------------------------");
+  if ( info ) puts("----------------------------------------------------------------------");
   for( i = 0, device_list = *first_entry; device_list; i++) {
     // Interact with relay
     if (!argument.list) {
@@ -251,7 +298,6 @@ int cmain (int argc, char **argv) {
   }
   if( i < 1 )
     printf("No devices found %d\n",i);
-
 
   exit (0);
 }

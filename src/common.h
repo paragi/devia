@@ -28,6 +28,6 @@ struct _device_list {
   struct _device_list *next;
 };
 
-extern int verbose;
+extern int info;
 
 #endif

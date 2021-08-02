@@ -244,7 +244,7 @@ static int set_relay(hid_device *handle, uint16_t bitmap)
 
 #ifdef TEST
 
-int main(){
+int xmain(){
   struct hid_device_info *device, *first_device;
 
   hid_init();
