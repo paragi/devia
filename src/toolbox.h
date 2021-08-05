@@ -5,6 +5,7 @@
 
 // SDS extensions
 sds sdsint2bin(long int value, int len );
+sds sdsbytes2hex(void * byte_str, int bytes, int block_size);
 
 // char * extensions
 char *strtounical(char * source);

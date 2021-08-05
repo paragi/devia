@@ -24,15 +24,34 @@
 #define SUCCESS 0
 #define FAILURE -1
 
-// Convert int to binary sds string
-sds sdsint2bin(long int value, int len ) {
-  sds binstr = sdsnew("0000000000000000000000000000000000000000000000000000000000000000");
-  int str_end = strlen(binstr) -1;
-  for (int i = str_end; i >= 0; i--){
-    binstr[i] = value & (1l<<(str_end-i)) ? '1' : '0';
+// Convert a BLOB to readable hex
+sds sdsbytes2hex(void * byte_str, int bytes, int block_size) {
+  sds str = sdsempty();
+  
+  block_size = abs(block_size/2);
+  if( block_size < 1 ) block_size = 1;
+  
+  for (int i = 0, blkp = 0; i< bytes; i++) {
+    str = sdscatprintf(str,"%.02X", ((unsigned char *)byte_str)[i]); 
+    if (++blkp >= block_size ) {
+      str = sdscatprintf(str," ");
+      blkp = 0;
+    } 
   }
-  sdsrange(binstr,-len,-1);
-  return binstr;
+  return str;  
+}  
+
+// Convert int to binary string
+sds sdsint2bin(long int value ,int len) {
+  char buffer[65];
+  sds str;
+
+  if(len+1 > sizeof(buffer)) len = sizeof(buffer)-1;
+  buffer[len] = 0;
+  for (int i = len-1; i >= 0; i--) 
+    buffer[i] = value & (1<<(len-i-1)) ? '1' : '0';
+
+  return str = sdsnew(buffer);  
 }
 
 // Convert int to binary string

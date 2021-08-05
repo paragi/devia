@@ -12,6 +12,7 @@
 #include "toolbox.h"
 #include "common.h"
 
+// Dummy interface
 int probe_dummy(int si_index, struct _device_identifier id, GSList **device_list){
   int sdl_index;
   const struct _supported_device * supported_device;
@@ -50,6 +51,8 @@ int probe_dummy(int si_index, struct _device_identifier id, GSList **device_list
   return SUCCESS;
 }    
 
+
+// Dummy device
 int action_dummy(struct _device_list *device, sds attribute, sds action, sds *reply){
   *reply = sdscatprintf(sdsempty(),"%s = %s",attribute,action ? : "OFF-LINE");
   return SUCCESS;
@@ -57,6 +60,5 @@ int action_dummy(struct _device_list *device, sds attribute, sds action, sds *re
 
 
 int recognize_dummy(int sdl_index, void * dev_info ) {
- 
   return true;     
 }

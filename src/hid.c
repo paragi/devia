@@ -944,7 +944,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 					char *dev_path = make_path(usb_dev, intf_desc->bInterfaceNumber, conf_desc->bConfigurationValue);
 					if (!strcmp(dev_path, path)) {
 						/* Matched Paths. Open this device */
-printf("DEV PATH: %s,%s\n",dev_path, path);
+//printf("DEV PATH: %s,%s\n",dev_path, path);
 						/* OPEN HERE */
 						res = libusb_open(usb_dev, &dev->device_handle);
 						if (res < 0) {
@@ -1100,7 +1100,7 @@ int HID_API_EXPORT hid_write(hid_device *dev, const unsigned char *data, size_t 
 			(unsigned char*)data,
 			length,
 			&actual_length, 1000);
-printf("  Len = %ld - written = %d\n",length, actual_length);
+//printf("  Len = %ld - written = %d\n",length, actual_length);
 		if (res < 0)
 			return -1;
 

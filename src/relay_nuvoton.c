@@ -73,8 +73,6 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #include "toolbox.h"
 #include "common.h"
 
-#define DEBUG
-// #define TEST
 
 struct HID_repport 
 {
@@ -89,11 +87,15 @@ struct HID_repport
 };
 
 
+
+
+
 static int get_nuvoton(hid_device *handle, int *relay_state) 
 {
   int i;
   struct HID_repport hid_msg;
   unsigned int checksum=0;
+  char str[17];
   
   // Create HID repport read status Request
   memset(&hid_msg, 0x11, sizeof(struct HID_repport));
@@ -107,30 +109,24 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
   hid_msg.chk_lsb = checksum & 0x00ff;
   hid_msg.chk_msb = (checksum & 0xff00) >> 8;
 
-  #ifdef DEBUG
-    printf("Sending HID repport to device:    "); 
-    for (i=0; i<sizeof(struct HID_repport); i++) printf("%02X ", *(((uint8_t*)&hid_msg)+i)); 
-     printf("\n"); 
-  #endif
+  if ( info )
+    printf("Sending HID repport:  %s\n",sdsbytes2hex(&hid_msg,sizeof(struct HID_repport),4));  // Free sds
 
-  if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) < 0)
+  if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
     return FAILURE;
 
   // Read response
   memset((unsigned char *)&hid_msg,0,sizeof(hid_msg));
-  if (hid_read(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) < 0)
+  if (hid_read(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
     return FAILURE;
 
   // Big endian
   *relay_state = hid_msg.byte2 + (hid_msg.byte1 << 8);
 
-  #ifdef DEBUG
-    printf("Recieved HID repport from device: "); 
-    for (i=0; i<sizeof(struct HID_repport); i++) 
-      printf("%02X ", *(((uint8_t*)&hid_msg)+i)); 
-    printf("\n"); 
-   printf("Relay state = 0x%04x\n", *relay_state); 
-  #endif
+  if ( info ) {
+    printf("Recieved HID repport: %s\n",sdsbytes2hex(&hid_msg,sizeof(struct HID_repport),4)); 
+    printf("Relay state = %s\n", sdsint2bin(*relay_state ,16));  // free sds
+  }
 
   return SUCCESS;
 }
@@ -154,12 +150,10 @@ static int set_nuvoton(hid_device *handle, int *relay_state) {
   hid_msg.chk_lsb = checksum & 0x00ff;
   hid_msg.chk_msb = (checksum & 0xff00) >> 8;
 
-  #ifdef DEBUG
-    printf("Sending HID repport to device:    "); 
-    for (i=0; i<sizeof(struct HID_repport); i++) printf("%02X ", *(((uint8_t*)&hid_msg)+i)); 
-      printf("\n"); 
-    printf("Set relays = 0x%04x\n", *relay_state);
-  #endif
+  if ( info ) {
+    printf("Send HID repport:     %s\n",sdsbytes2hex(&hid_msg,sizeof(struct HID_repport),4)); 
+    printf("Relay state = %s\n", sdsint2bin(*relay_state ,16)); 
+  }
 
   if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) < 0)
     return FAILURE;
@@ -170,32 +164,40 @@ static int set_nuvoton(hid_device *handle, int *relay_state) {
 int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *reply) {
   int relay_id = 0;
   int relay_state = -1;
+  int mask;
   int return_code = SUCCESS;
   hid_device *handle;
 
-  if ( (handle = hid_open_path(device->path)) > 0) {
+  if ( (handle = hid_open_path(device->path)) <= 0) {
     perror("Unable to open HID API device");
     return FAILURE;      
   }
 
   if( attribute && strcmp(strtolower(attribute),"all") )
     relay_id = strtol(attribute,NULL,10);  
+  
+  mask = relay_id ? 1<<(relay_id - 1) : 0xFFFF;
+
+  if ( info ) 
+    puts("Rading relay state:");
 
   return_code = get_nuvoton(handle, &relay_state); 
 
   if (action) {
-    int mask = attribute ? 1<<(relay_id - 1) : 0xff;
+    if ( info ) 
+      puts("Setting relay state:");
+
     if (!strcmp(strtolower(action), "off") )
       relay_state &= ~mask; 
     if (!strcmp(strtolower(action), "on") )
       relay_state |= mask; 
     if (!strcmp(strtolower(action), "toggle") )
-      relay_state ^= ~relay_state & mask;
+      relay_state ^= mask;
     return_code = set_nuvoton(handle, &relay_state); 
   } 
 
-  if(attribute > 0 )
-    *reply = (1<<relay_id) & relay_state ? sdsnew("on") : sdsnew("off");
+  if( relay_id > 0 )
+    *reply = mask & relay_state ? sdsnew("on") : sdsnew("off");
   else      
     *reply = sdsint2bin(relay_state + 0LL,16);
 
