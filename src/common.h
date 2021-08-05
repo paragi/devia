@@ -1,7 +1,14 @@
-#include "sds.h"
+
 
 #ifndef COMMON_INCL
 #define COMMON_INCL
+
+/* Linux */
+#include <hidapi/hidapi.h>
+
+/* Application */
+#include "toolbox.h"
+#include "hidusb.h"
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -10,15 +17,11 @@
 struct _device_identifier {
   sds interface;
   sds device_id;
-  int vendor_id;
-  int product_id;
-  sds manufacturer_string;
-  sds serial_number;
   sds port;
   sds device_path;
 };
 
-// List of devices
+// List of active devices
 struct _device_list {
   sds name;
   sds id;
@@ -29,5 +32,23 @@ struct _device_list {
 };
 
 extern int info;
+
+
+// Supported interfaces and device list
+struct _supported_device {
+  const char * name;
+  const char * description;
+  int (*recognize)(int sdl_index, void *dev_info );
+  int (*action)(struct _device_list *device, sds attribute, sds action, sds *reply);
+};
+
+struct _supported_interface {
+  const char *name;
+  const char *description;
+  int (*probe)(int si_index, struct _device_identifier id, GSList **device_list);
+  const struct _supported_device *device;
+};
+
+extern const struct _supported_interface supported_interface[];
 
 #endif

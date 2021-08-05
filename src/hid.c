@@ -115,7 +115,7 @@ static int pthread_barrier_wait(pthread_barrier_t *barrier)
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#define DEBUG_PRINTF
 #ifdef DEBUG_PRINTF
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
@@ -558,7 +558,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 
 	struct hid_device_info *root = NULL; /* return object */
 	struct hid_device_info *cur_dev = NULL;
-printf("Using the local copy of hid.c as HIDAPI\n"); 
+//printf("Using the local copy of hid.c as HIDAPI\n"); 
 	if(hid_init() < 0)
 		return NULL;
 
@@ -609,7 +609,7 @@ printf("Using the local copy of hid.c as HIDAPI\n");
 							res = libusb_open(dev, &handle);
 
 							if (res >= 0) {
-                printf("Open %s\n",cur_dev->path);
+                //printf("Open %s\n",cur_dev->path);
 #ifdef __ANDROID__
 								/* There is (a potential) libusb Android backend, in which
 								   device descriptor is not accurate up until the device is opened.
@@ -944,7 +944,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 					char *dev_path = make_path(usb_dev, intf_desc->bInterfaceNumber, conf_desc->bConfigurationValue);
 					if (!strcmp(dev_path, path)) {
 						/* Matched Paths. Open this device */
-
+printf("DEV PATH: %s,%s\n",dev_path, path);
 						/* OPEN HERE */
 						res = libusb_open(usb_dev, &dev->device_handle);
 						if (res < 0) {

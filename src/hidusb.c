@@ -1,50 +1,11 @@
 /* 
-Driver for Nuvoton 8-16 channel USB-HID relay controller
 
-This works with the Nuvoton relay controler.
+  HID USB interface probe
 
-However the device->path changes when device is unpluged and reattached. 
-A stable path is needed for identificatio, since it has no serial number.
+  Scan for HID USB devices, recognize supported devices, and add device to list of active devices.
+  Scanning is non intrusive. 
 
-*
-* Description:
-*   usb hid relay controller board, from Nuvoton - Winbond Electronics Corp.
-*   This 8-16-channel relay USB controller is almost identical to the Sainsmart
-*   16-channel controller, except that the state of the relays are in bit-order
-*   from 0 to 16, LSB first
-*  
-*   It's a Chinese product with precious little and useless documentation and support.
-*   <https://www.cafago.com/en/p-e1812-1.html>
-*
-*   The Nuvoton relay controller is almost identical to the SainSmart 16 channel controler,
-*   With a single exception of the bit order of the individual relays. (Gathered from the code)
-*
-* Identifying devices:
-*   The Nuvoton device has no serial number. The only way to uniquely identify multiple devices
-*   connected, is port paths. 
-*   The HIDAPI enumeration returns a device node path. As the device node changes, when reconnected,
-*   Its unreliable as identification.
-*   As HIDAPI seem to be unsupported as of 2021, the workaround is to write a more 
-*   detailed enumeration function, using the underlying UDEVB lib.
-*
-* Implementation:  
-*   This driver returns a unique identifier, based on <vendor id>:<product id>:[<port path>:serial number>]:<Manufacturer_string>
-*   the identifier is returned in the serial number string.
-*   When used for reading and writing, the path is looked up.
-*
-* Quirk:
-*   HIDAPI use a device path in the form <bus number 4 digit>:<device node>:<serial number> ("%04x:%04x:00")
-*   The last two sections of  device_path, contains busnumber and device node, used by the HIDAPI to open the device
-*   This is not at static identification.
-*
-* Quirk:
-*   The Nuvoton relay controller has a 16 bit relay state.
-*   When reading relay state, the byte order is MSB, LSB  (Big endian)
-*   When setting the relay state, the byte order is LSB, MSB (Little endian)
-
-NB: including source code for HIDAPI (libusb version) until version with stabel parth to device, is in curculation.
-
-* By: Simon Rigét @ Paragi 2021
+  By: Simon Rigét @ Paragi 2021
 */
 /* C */
 #include <stdio.h>
@@ -65,14 +26,19 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #include <sys/utsname.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <grp.h>
 
 /* Linux */
 #include <hidapi/hidapi.h>
+#include <glib.h>
 
 /* Application */
+#include "hidusb.h"
+
 #include "toolbox.h"
 #include "common.h"
-#include "relay_nuvoton.h"
+
+
 
 #define DEBUG
 // #define TEST
@@ -109,7 +75,8 @@ struct hid_device_info * hidusb_enumerate_match(
     return NULL;  
   }
  
-  print_hid_device_info(device);
+  if ( info )
+    print_hid_device_info(device);
   
   while (device ) {
     do {
@@ -132,8 +99,8 @@ struct hid_device_info * hidusb_enumerate_match(
         && !wcscmp(wstr, device->manufacturer_string) ) 
           break;
 
-      print_hid_device_info(device);
-      
+      // path? port?
+
       returned_list = returned_list->next = malloc(sizeof(struct hid_device_info));
       memcpy(returned_list,device,sizeof(struct hid_device_info));
       returned_list->next = NULL;
@@ -151,8 +118,8 @@ struct hid_device_info * hidusb_enumerate_match(
 /* 
   probe for HID USB devices that match relay drivers.
   When matched, add aan entry to the device list.
-*/   
-int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
+*/  
+int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_list){
 
   struct hid_device_info *hid_device, *first_hid_device;
   sds * sds_array;
@@ -160,10 +127,11 @@ int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
   int vendor_id = 0, product_id = 0;
   sds serial_number = sdsempty();
   sds manufacturer_string = sdsempty();
+  const struct _supported_device * supported_device;
 
-  if( info )
-    printf("probing HID-USB devices( %s)\n", id.device_id ? : "empty");
+  assert(supported_interface[si_index].name);
 
+  // Split device id argument into components
   if(id.device_id){
     sds_array = sdssplitlen(id.device_id,sdslen(id.device_id), ":", 1, &length);
     if (length >0 )  
@@ -180,31 +148,52 @@ int probe_hidusb(struct _device_identifier id, struct _device_list ** device){
   // Get a list of USB HID devices (Linked with libusb-hidapi) 
   first_hid_device = hid_device = hidusb_enumerate_match(vendor_id, product_id, serial_number, manufacturer_string, id.port);
   while (hid_device) {
-    if ( info ) printf("  Found device at %s",hid_device->path);
-    do {
-      if ( (recognize_nuvoton(hid_device, *device )) )
+    int sdl_index;
+    if ( info ) printf("Found device at %s",hid_device->path);
+
+    // recognize a device
+    for(sdl_index = 0; supported_interface[si_index].device[sdl_index].name; sdl_index++ ){
+      supported_device = &supported_interface[si_index].device[sdl_index];
+      if ( supported_device->recognize && supported_device->recognize(sdl_index, hid_device ) )
         break;
-      // Put new hid device recognizers here
+    }
 
-    } while( 0 );
+    // Add entry to list of active devices, if recognized        
+    if ( supported_interface[si_index].device[sdl_index].name ) {
+      struct _device_list *entry;
+      struct stat stat_buffer;
+      struct group group_buffer, *group_pointer = NULL;
 
-    // Add generic information to the newly created list entry
-    if ( device && *device ) {
-      (*device)->id = sdscatprintf(sdsempty(),
-                "hidusb&%04X:%04X&%s&%ls&%ls",
+      // Create a new entry in active device list
+      entry = malloc(sizeof(struct _device_list)); 
+      entry->name = sdsnew(supported_device->name);
+      entry->id = sdscatprintf(sdsempty(),
+                "hidusb#%04X:%04X:%ls:%ls#%s#%s",
                 hid_device->vendor_id,
                 hid_device->product_id,
-                hid_device->path ? : "",
                 hid_device->serial_number ? : L"",
-                hid_device->manufacturer_string ? : L""
-      ); 
-      (*device)->group = "dailout";
-      device = &(*device)->next; 
-      if ( info ) 
-        printf("-- Recognized as %s\n",(*device)->name);
+                hid_device->manufacturer_string ? : L"",
+                hid_device->path ? : "",
+                "/dev/<something>"
+      );
+      entry->path = sdsnew(hid_device->path ? : "");
+      if ( !stat(hid_device->path, &stat_buffer) ) {
+        char* nambuf = malloc(4096); // Smallest size that works is 2392
+        // char errbuf[2048];
+        if( !getgrgid_r(stat_buffer.st_gid, &group_buffer, nambuf, 4096, &group_pointer) )
+          entry->group = group_pointer->gr_name;
+        else
+          entry->group = "unknown";
+      }
+      entry->group = "No group";
+      entry->action = supported_device->action;
+      *device_list = g_slist_append(*device_list, entry);
 
+      if ( info ) 
+        printf(" -- Recognized as %s\n",entry->name);
+      
     } else if ( info ) 
-      printf("-- Not recognized\n");
+      printf(" -- Not recognized\n");
 
     hid_device = hid_device->next; 
   }

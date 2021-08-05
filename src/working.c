@@ -73,7 +73,6 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #include "toolbox.h"
 
 #define DEBUG
-#define TEST
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -242,9 +241,10 @@ static int set_relay(hid_device *handle, uint16_t bitmap)
   return SUCCESS;
 }
 
-#ifdef TEST
+//#define TEST
 
-int xmain(){
+#ifdef TEST
+int main(){
   struct hid_device_info *device, *first_device;
 
   hid_init();

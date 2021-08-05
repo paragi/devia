@@ -204,23 +204,17 @@ int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *
   return return_code;
 }
 
-int recognize_nuvoton(struct hid_device_info *hid_dev_info, struct _device_list *device) {
-  if ( hid_dev_info->vendor_id == 0x0416
-    && hid_dev_info->product_id == 0x5020
-    && !wcscmp(hid_dev_info->manufacturer_string,L"Nuvoton" )){
+// The interface scanner, asks if this is your device
+int recognize_nuvoton(int sdl_index, void *dev_info) {
+  struct hid_device_info *hid_device_info = dev_info; 
 
-    // Create a new entry in device list
-    device = malloc(sizeof(struct _device_list)); 
-    device->next = NULL;
-    
-    // Provide device information
-    device->action = action_nuvoton;
-    device->name = sdscatprintf(sdsempty(), "Nuvoton %s", hid_dev_info->path);
-
+  if ( hid_device_info
+    && hid_device_info->vendor_id == 0x0416
+    && hid_device_info->product_id == 0x5020
+    && !wcscmp(hid_device_info->manufacturer_string,L"Nuvoton" )){
+ 
     return true;     
   }
 
   return false;
 }
-
-;

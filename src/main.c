@@ -22,11 +22,11 @@
 /* Linux */
 #include <hidapi/hidapi.h>
 #include <argp.h>
+#include <glib.h>
 
 /* Application */
 #include "toolbox.h"
 #include "common.h"
-#include "hidusb.h"
 
 #define DEBUG
 
@@ -40,7 +40,7 @@ static char doc[] =
  "devia  [<options>] [<identifier> [<attribute of device> [<action>]]]\n"
   "\n"
   "devia (Device interact) Interacts with one or more attached devices.\n"
-  "\n "
+  "\n"
   "  <identifyer>: Is a device specific concatanated key, used to identify the  \n"
   "            device. Is is a key consisting of \n"
   "            <interface>&<device identifier>&<port>&<device path> \n"
@@ -102,7 +102,6 @@ static struct argp_option options[] = {
 struct arguments {
   int list;       // -l
   int info;    // -i
-  int version;    // -v
   int list_supported_devices; // -s
   int no_arg;
   struct _device_identifier id;
@@ -110,19 +109,31 @@ struct arguments {
   char * action;
 };
 
+void print_arguments(struct arguments argument) {
+  printf("Argument interpretation:\n");
+  printf("  list devices:           %s\n", argument.list ? "true" : "false");
+  printf("  list supported devices: %s\n", argument.list_supported_devices ? "true" : "false");
+  printf("  Show extra info:        %s\n", argument.info ? "true" : "false");
+  printf("  no arguments:           %s\n", argument.no_arg ? "true" : "false");
+  printf("  device identifier:\n");
+  printf("     interface:   %s\n", argument.id.interface); 
+  printf("     device id:   %s\n", argument.id.device_id); 
+  printf("     port:        %s\n", argument.id.port); 
+  printf("     device path: %s\n", argument.id.device_path); 
+  printf("  Attribute:              %s\n", argument.attribute);
+  printf("  action:                 %s\n", argument.action);
+}
+
 // Parse arguments and options. Arguments are parsed, one at a time, as they occur
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
-  /* Get the input argument from argp_parse, which we know is a pointer to our   structure. */
+  /* Get the input argument from argp_parse, which we know is a pointer to our structure. */
   struct arguments *argument = state->input;
 
   switch (key) {
     case 'l': 
       argument->list = true;
       break;
-    case 'v': 
-      argument->version = true;
-      break;
-    case 'i':
+     case 'i':
       info = argument->info = true;
       break;
     case 's':
@@ -131,15 +142,17 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
     case ARGP_KEY_ARG:
       /* There are remaining arguments not parsed by any parser, which may be found
       starting at (STATE->argv + STATE->next).  If success is returned, but
-      STATE->next left untouched, it's assumed that all arguments were consume,
+      STATE->next left untouched, it's assumed that all arguments were consumed,
       otherwise, the parser should adjust STATE->next to reflect any arguments
       consumed.  */
       switch (state->arg_num) {
         case 0: { // split unique device identifier 
           int length;
-          sds * sds_array = sdssplitlen(arg,strlen(arg), "&", 1, &length);
-
-          /*printf("unique device identifier Array = {\n");
+          sds *sds_array;
+          
+          sds_array = sdssplitlen(arg,strlen(arg), "#", 1, &length);
+          /*
+          printf("unique device identifier Array = {\n");
           for (int i = 0; i < length; i++)
             printf("%d %s\n", i, sds_array[i]);
           printf("}\n");
@@ -172,9 +185,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
     case ARGP_KEY_ARGS:
       break;  
-      /* There are no more command line arguments at all.  */
 
+    /* There are no more command line arguments at all.  */
     case ARGP_KEY_END:
+      if ( argument->no_arg && !argument->list && !argument->list_supported_devices) 
+        argp_usage(state); // exit
       break;
       /* Because it's common to want to do some special processing if there aren't
          any non-option args, user parsers are called with this key if they didn't
@@ -185,8 +200,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       /* Passed in before any parsing is done.  Afterwards, the values of each
          element of the CHILD_INPUT field, if any, in the state structure is
          copied to each child's state to be the initial value of the INPUT field.  */
-      argp_usage (state);
+      //argp_usage (state);
       argument->no_arg = true;
+      break;
     case ARGP_KEY_INIT:
       /* Use after all other keys, including SUCCESS & END.  */
     case ARGP_KEY_FINI:
@@ -203,101 +219,81 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-void print_arguments(struct arguments argument) {
-  printf("Argument interpretation:\n");
-  printf("  no arguments = %s\n", argument.no_arg ? "true" : "false");
-  printf("  list devices: %s\n", argument.list ? "true" : "false");
-  printf("  device identifier:\n");
-  printf("     interface:   %s\n", argument.id.interface); 
-  printf("     device id:   %s\n", argument.id.device_id); 
-  printf("     port:        %s\n", argument.id.port); 
-  printf("     device path: %s\n", argument.id.device_path); 
-  printf("  Attribute: %s\n", argument.attribute);
-  printf("  action: %s\n", argument.action);
-}
-
-int probe_dummy(struct _device_identifier id, struct _device_list ** device){
-
-  if ( info )
-    printf("Probing dummy devices (%s)\n", id.device_id ? : "empty" );
-  
-  if ( info ) printf("  Found device ");
-  *device = malloc(sizeof(struct _device_list)); 
-  (*device)->id = "Dummy device 1";
-  (*device)->group = "no group";
-  (*device)->name = "Dummy device";
-
-  (*device)->next = NULL;
-  if ( info )
-    printf("-- Recognized as %s\n",(*device)->name);
-  device = &(*device)->next; 
-
-  if ( info ) printf("  Found device ");
-  *device = malloc(sizeof(struct _device_list)); 
-  (*device)->id = "Dummy device 2";
-  (*device)->group = "no group";
-  (*device)->name = "Dummy device";
-
-  (*device)->next = NULL;
-  if ( info )
-    printf("-- Recognized as %s\n",(*device)->name);
-  device = &(*device)->next; 
-
-  return SUCCESS;
-}    
-
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
+//#define TEST
+#ifndef TEST
 int main (int argc, char **argv) {
   int i;
   struct arguments argument;
-  struct _device_list **first_entry, *device_list = NULL;
+  struct _device_list *entry;
+  GSList *device_list = NULL, *iterator = NULL;
 
   // Parse arguments
   memset(&argument,0,sizeof(argument));
   argp_parse (&argp, argc, argv, 0, 0, &argument);
-  if ( info ) print_arguments(argument);
+  
+  if ( info ) 
+    print_arguments(argument);
+  
+  // loop through supported devices
+  // probe devices and make a list of actual matching devices.
+  for( i = 0; supported_interface[i].name; i++) {
+    
+    // List supported interface and devices
+    if( argument.list_supported_devices ) {
+      printf("%s:\n", supported_interface[i].description);
+      for(int ii = 0; supported_interface[i].device[ii].name; ii++)
+        printf("  %s - %s\n",supported_interface[i].device[ii].name, supported_interface[i].device[ii].description);
 
-  if ( argument.no_arg && !argument.list) 
-    // Usages has been printed
-    puts("#!");
-    exit(0);
+    // Skip unwanted interfaces  
+    } else if ( argument.id.interface 
+          && strcmp(argument.id.interface, supported_interface[i].name) ) {
+        continue;    
 
-  if ( argument.list_supported_devices ) {
-    puts("Supported devices:");
-    exit(0);
+    // Probe and make a list of mathched devices
+    } else { 
+      if ( info )
+        printf("Probing %s\n",  supported_interface[i].name);
+      if ( supported_interface[i].probe )
+        supported_interface[i].probe(i,argument.id, &device_list);
+    }  
   }
 
-  if ( argument.version ) {
-    printf("devia version %s\n", argp_program_version);
+  if( argument.list_supported_devices ) 
     exit(0);
-  }
+  
+  if ( info && argument.list ) 
+      puts("----------------------------------------------------------------------");
+  
+  if ( !g_slist_length(device_list) )
+    puts("No devices found");
 
-  // Probe and make a list of mathched devices
-  first_entry = &device_list;
-  if ( !argument.id.interface || !strcmp(argument.id.interface ? : "","dummy") )
-    probe_dummy(argument.id, &device_list);
+  else for (iterator = device_list; iterator; iterator = iterator->next) {
+    entry = (struct _device_list *)iterator->data;
+    assert(entry->name);
+    assert(entry->id);
+    assert(entry->path);
+    assert(entry->group);
 
-  if ( !argument.id.interface || !strcmp(argument.id.interface ? : "","hidusb") )
-    probe_hidusb(argument.id, &device_list);
+    // List device and group owner (to discourage use of root privilliges)  
+    if (argument.list) {
+      printf("%s  id: %s  path: %s  group: %s\n", 
+        entry->name, 
+        entry->id, 
+        entry->path, 
+        entry->group
+      );
 
-  // List relays
-  if ( info ) puts("----------------------------------------------------------------------");
-  for( i = 0, device_list = *first_entry; device_list; i++) {
-    // Interact with relay
-    if (!argument.list) {
-      if ( argument.action )
-        ; // Set relay state
-      else
-        ; // read state of relays
+    // Interact with matched devices
+    } else {
+      sds reply = sdsempty();
+      entry->action(entry, argument.attribute, argument.action, &reply);
+      printf("%s\n",reply[0] ? reply : "No reply");
     }
-
-    printf("device ID: %s - group: %s\n", device_list->id, device_list->group);
-    device_list = device_list->next;
   }
-  if( i < 1 )
-    printf("No devices found %d\n",i);
-
+  g_slist_free(device_list);
   exit (0);
 }
+#endif
