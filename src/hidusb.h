@@ -1,6 +1,5 @@
 #ifndef HIDUSB_H
 #define HIDUSB_H
-#include <glib.h>
 
 #include "common.h"
 

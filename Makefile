@@ -5,9 +5,13 @@ TARGET_EXEC := devia
 DESTDIR = /usr
 BUILD_DIR := ./build
 SRC_DIRS := ./src
-LDFLAGS += -lexplain -lusb-1.0 -lftdi -lpthread -ludev -lglib-2.0
-INCLUDE += -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/glib-2.0
-						 
+LDFLAGS += -lexplain -lusb-1.0 -lftdi -lpthread -ludev 
+#INCLUDE += -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/glib-2.0
+
+# There is an unsolved issue with glib, both vscode and gcc paths...
+CFLAGS += `pkg-config --cflags glib-2.0` 
+LDFLAGS += `pkg-config --libs glib-2.0`
+
 # Debug flags
 # -Q will show which function in the test case is causing it to crash.
 # -v shows how cc1 was invoked (useful for invoking cc1 manually in gdb).

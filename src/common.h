@@ -1,14 +1,18 @@
+/*
+  Common.h 
 
+  common application wide definitions 
 
+*/
 #ifndef COMMON_INCL
 #define COMMON_INCL
 
 /* Linux */
 #include <hidapi/hidapi.h>
+#include <glib.h>
 
 /* Application */
 #include "toolbox.h"
-#include "hidusb.h"
 
 #define SUCCESS 0
 #define FAILURE -1

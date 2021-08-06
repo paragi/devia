@@ -56,6 +56,7 @@ NB: including source code for HIDAPI (libusb version) until version with stabel 
 #include <stdbool.h>
 #include <assert.h>
 #include <malloc.h>
+#include <stdbool.h>
 
 /* Unix */
 #include <unistd.h>
@@ -95,7 +96,6 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
   int i;
   struct HID_repport hid_msg;
   unsigned int checksum=0;
-  char str[17];
   
   // Create HID repport read status Request
   memset(&hid_msg, 0x11, sizeof(struct HID_repport));

@@ -17,6 +17,9 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <malloc.h>
+#include <stddef.h>
+#include <wchar.h>
+#include <stdbool.h>
 
 /* Unix */
 #include <unistd.h>
@@ -33,12 +36,15 @@
 #include <glib.h>
 
 /* Application */
-#include "hidusb.h"
-
 #include "toolbox.h"
 #include "common.h"
 
+#include "hidusb.h"
 
+#ifndef _WCHAR_T_DEFINED
+// VSCode has a problem with using include paths....
+typedef unsigned short wchar_t;
+#endif
 
 #define DEBUG
 // #define TEST
@@ -80,7 +86,7 @@ struct hid_device_info * hidusb_enumerate_match(
   
   while (device ) {
     do {
-      if( !device->path ) 
+      if( !device->path )
         break;
       
       if (!device->product_string ) // Claimed already by other process

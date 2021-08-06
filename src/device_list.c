@@ -9,6 +9,7 @@
 // Device headers
 #include "dummy_device.h"
 #include "relay_nuvoton.h"
+#include "hidusb.h"
 
 
 // Dummy devices
