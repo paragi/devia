@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <malloc.h>
 #include <error.h>
+#include <stdbool.h>
 
 /* Unix */
 #include <unistd.h>
@@ -23,16 +24,17 @@
 #include <hidapi/hidapi.h>
 #include <argp.h>
 #include <glib.h>
-
+    
 /* Application */
 #include "toolbox.h"
 #include "common.h"
+#include "version.h"
 
 #define DEBUG
 
 int info = false; // If set, output information usefull to tinkeres and  developers. 
-
-const char *argp_program_version = "Device interact version 1.0  Paragi 2021.";
+ 
+const char *argp_program_version = VERSION_LONG;
 const char *argp_program_bug_address = "github.com/paragi/devia/issues.\nDon't hesitate to write a bug repport or feature request ect";
 
 /* Program documentation. */

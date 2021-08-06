@@ -28,7 +28,7 @@ const struct _supported_device dummy_device[] =
 const struct _supported_device hidusb_device[] = 
 {
   {
-    "Nuvoton",
+    "Nuvoton relay controler",
     "USB HID Relay controller 8-16 channels. Nuvoton/Winbond Electronics Corp",
     recognize_nuvoton,
     action_nuvoton

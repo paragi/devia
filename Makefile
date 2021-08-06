@@ -12,6 +12,14 @@ LDFLAGS += -lexplain -lusb-1.0 -lftdi -lpthread -ludev
 CFLAGS += `pkg-config --cflags glib-2.0` 
 LDFLAGS += `pkg-config --libs glib-2.0`
 
+# File to auto-incrementing build number and date.
+AUTOGEN_FILE := $(SRC_DIRS)/version.h
+# Auto generate build number and date
+#   Find #define BUILD_NUMMBER in version.h file
+#   Extract the number and increment
+#   When compiling, replace the lines, with a new one, with the new values
+AUTOGEN_NEXT := $(shell expr $$(awk '/#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1)
+
 # Debug flags
 # -Q will show which function in the test case is causing it to crash.
 # -v shows how cc1 was invoked (useful for invoking cc1 manually in gdb).
@@ -40,19 +48,20 @@ INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC):	$(OBJS)
 	$(CXX)	$(OBJS) -o $@ $(LDFLAGS)
 	if [ ! -f $(TARGET_EXEC) ] ; then ln -s $(BUILD_DIR)/$(TARGET_EXEC) ./; fi
 
 # Build step for C source
-$(BUILD_DIR)/%.c.o: %.c
+$(BUILD_DIR)/%.c.o: %.c 
 	mkdir -p $(dir $@)
+	sed -i "s/#define BUILD_NUMBER .*/#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
+	sed -i "s/#define BUILD_DATE.*/#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Build step for C++ source
-$(BUILD_DIR)/%.cpp.o:	%.cpp
+$(BUILD_DIR)/%.cpp.o:	%.cpp 
 	mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
@@ -66,6 +75,7 @@ install:
 
 uninstall:
 	sudo rm -f $(DESTDIR)/bin/$(TARGET_EXEC)
+
 
 # Include the .d makefiles. The - at the front suppresses the errors of missing
 # Makefiles. Initially, all the .d files will be missing, and we don't want those
