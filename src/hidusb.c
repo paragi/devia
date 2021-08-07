@@ -105,7 +105,8 @@ struct hid_device_info * hidusb_enumerate_match(
         && !wcscmp(wstr, device->manufacturer_string) ) 
           break;
 
-      // path? port?
+      if ( path && strcmp( path, device->path ) )
+        break;
 
       returned_list = returned_list->next = malloc(sizeof(struct hid_device_info));
       memcpy(returned_list,device,sizeof(struct hid_device_info));

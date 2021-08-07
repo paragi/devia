@@ -18,7 +18,7 @@ AUTOGEN_FILE := $(SRC_DIRS)/version.h
 #   Find #define BUILD_NUMMBER in version.h file
 #   Extract the number and increment
 #   When compiling, replace the lines, with a new one, with the new values
-AUTOGEN_NEXT := $(shell expr $$(awk '/\#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1)
+AUTOGEN_NEXT := $(shell expr $$(awk '/\#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1) $(USER)
 
 # Debug flags
 # -Q will show which function in the test case is causing it to crash.

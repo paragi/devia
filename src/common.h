@@ -55,4 +55,14 @@ struct _supported_interface {
 
 extern const struct _supported_interface supported_interface[];
 
+
+
+#ifndef true
+#define true 1
+#endif
+
+#ifndef false
+#define false 0
+#endif
+
 #endif
