@@ -18,7 +18,7 @@ AUTOGEN_FILE := $(SRC_DIRS)/version.h
 #   Find #define BUILD_NUMMBER in version.h file
 #   Extract the number and increment
 #   When compiling, replace the lines, with a new one, with the new values
-AUTOGEN_NEXT := $(shell expr $$(awk '/#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1)
+AUTOGEN_NEXT := $(shell expr $$(awk '/\#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1)
 
 # Debug flags
 # -Q will show which function in the test case is causing it to crash.
@@ -56,8 +56,8 @@ $(BUILD_DIR)/$(TARGET_EXEC):	$(OBJS)
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c 
 	mkdir -p $(dir $@)
-	sed -i "s/#define BUILD_NUMBER .*/#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
-	sed -i "s/#define BUILD_DATE.*/#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
+	sed -i "s/\#define BUILD_NUMBER .*/\#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
+	sed -i "s/\#define BUILD_DATE.*/\#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Build step for C++ source
