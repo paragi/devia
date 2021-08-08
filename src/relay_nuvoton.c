@@ -112,6 +112,7 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
   if ( info )
     printf("Sending HID repport:  %s\n",sdsbytes2hex(&hid_msg,sizeof(struct HID_repport),4));  // Free sds
 
+  //hid_set_nonblocking(handle, int nonblock)
   if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
     return FAILURE;
   usleep(1000);
@@ -119,7 +120,7 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
   // Read response
   memset((unsigned char *)&hid_msg,0,sizeof(hid_msg));
   
-  if ( hid_read_timeout(handle, (unsigned char *)&hid_msg, sizeof(hid_msg), 6) <= 0 )
+  if ( hid_read_timeout(handle, (unsigned char *)&hid_msg, sizeof(hid_msg), -1) <= 0 )
     return FAILURE;
 
   // Big endian
