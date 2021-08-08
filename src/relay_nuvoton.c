@@ -115,10 +115,11 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
   if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
     return FAILURE;
   usleep(1000);
-  
+
   // Read response
   memset((unsigned char *)&hid_msg,0,sizeof(hid_msg));
-  if (hid_read(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
+  
+  if ( hid_read_timeout(handle, (unsigned char *)&hid_msg, sizeof(hid_msg), 6) <= 0 )
     return FAILURE;
 
   // Big endian
