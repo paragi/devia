@@ -34,6 +34,7 @@
 /* Linux */
 #include <hidapi/hidapi.h>
 #include <glib.h>
+#include <libudev.h>
 
 /* Application */
 #include "toolbox.h"
@@ -170,10 +171,13 @@ int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_lis
       struct _device_list *entry;
       struct stat stat_buffer;
       struct group group_buffer, *group_pointer = NULL;
+      struct udev_device * usb_dev;
 
       // Create a new entry in active device list
       entry = malloc(sizeof(struct _device_list)); 
       entry->name = sdsnew(supported_device->name);
+      // Find device path
+
       entry->id = sdscatprintf(sdsempty(),
                 "hidusb#%04X:%04X:%ls:%ls#%s#%s",
                 hid_device->vendor_id,
@@ -183,16 +187,35 @@ int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_lis
                 hid_device->path ? : "",
                 "/dev/<something>"
       );
+
+      /*
+      list = udev_enumerate_get_list_entry(enumerate);
+
+    udev_list_entry_foreach(node, list) 
+    {
+        char *str = NULL;
+        path = udev_list_entry_get_name(node);
+        dev = udev_device_new_from_syspath(udev, path);
+        if  (str = strstr(path, REQUESTED_USB_PORT))
+        {
+             if (str = strstr(str, "event"))
+             {
+                  dev_path = strdup(udev_device_get_devnode(dev));
+                  udev_device_unref(dev);
+                  break;
+             }
+        }
+        udev_device_unref(dev);
+    }
+    */
       entry->path = sdsnew(hid_device->path ? : "");
       if ( !stat(hid_device->path, &stat_buffer) ) {
-        char* nambuf = malloc(4096); // Smallest size that works is 2392
-        // char errbuf[2048];
-        if( !getgrgid_r(stat_buffer.st_gid, &group_buffer, nambuf, 4096, &group_pointer) )
-          entry->group = group_pointer->gr_name;
-        else
+        struct group *grp;        
+        grp = getgrgid(stat_buffer.st_gid);
+        entry->group = sdsnew(grp->gr_name);
+      } else {
           entry->group = "unknown";
       }
-      entry->group = "No group";
       entry->action = supported_device->action;
       *device_list = g_slist_append(*device_list, entry);
 

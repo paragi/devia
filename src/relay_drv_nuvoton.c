@@ -189,7 +189,7 @@ void free_usb_device_info_subelements(struct usb_device_info_extendet * this){
   free(this->id );
 }
 
-void free_enumerate_usb_devices(struct usb_device_info_extendet * this){
+void free_enumerate_usb_devices(struct usb_device_info_extendet * this){ 
   while( this != NULL){
     struct usb_device_info_extendet * next = this->next;
     free_usb_device_info_subelements(this);

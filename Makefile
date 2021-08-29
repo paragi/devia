@@ -6,11 +6,11 @@ DESTDIR = /usr
 BUILD_DIR := ./build
 SRC_DIRS := ./src
 LDFLAGS += -lexplain -lusb-1.0 -lftdi -lpthread -ludev 
-#INCLUDE += -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/glib-2.0
 
 # There is an unsolved issue with glib, both vscode and gcc paths...
-CFLAGS += `pkg-config --cflags glib-2.0` 
-LDFLAGS += `pkg-config --libs glib-2.0`
+# On Raspbarian libusb isn't found either
+CFLAGS += `pkg-config --cflags glib-2.0` `pkg-config --cflags libusb-1.0`
+LDFLAGS += `pkg-config --libs glib-2.0`  `pkg-config --libs libusb-1.0`
 
 # File to auto-incrementing build number and date.
 AUTOGEN_FILE := $(SRC_DIRS)/version.h

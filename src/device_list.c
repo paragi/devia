@@ -10,6 +10,7 @@
 #include "dummy_device.h"
 #include "relay_nuvoton.h"
 #include "hidusb.h"
+#include "sysfs.h"
 
 
 // Dummy devices
@@ -53,8 +54,14 @@ const struct _supported_device usb_device[] =
   { NULL }
 };
 
-const struct _supported_device gpio_device[] = 
+const struct _supported_device sysfs_device[] = 
 {
+   {
+    "SysFS",
+    "System kernel file system enabled device",
+    NULL,
+    action_sysfs
+  },
   { NULL }
 };
 
@@ -79,7 +86,7 @@ const struct _supported_interface supported_interface[] =
 {
   {"dummy", "Internal test devices", probe_dummy, dummy_device},
   {"hidusb", "HID USB devices", probe_hidusb, hidusb_device},
-  {"gpio", "General purpose IO chip",NULL, gpio_device},
+  {"sysfs", "System kernel file system access",probe_sysfs, sysfs_device},
   {"serial", "Serial (com/tty) devices", NULL, serial_device},
   {"onewire","one-wire (w1) interfaced devices", NULL, onewire_device},
   {NULL}
