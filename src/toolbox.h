@@ -13,4 +13,7 @@ char *strtoupper(char * source);
 char *strtolower(char * source); 
 char *int2bin(int value ,int len, char *buffer, int buf_size);
 
+sds file_permission_needed(char * path, int access_type);
+sds file_permissions_string(char * path);
+
 #endif

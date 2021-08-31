@@ -38,6 +38,7 @@
 #include <sys/utsname.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <pwd.h>
 #include <grp.h>
 
 /* Linux */
@@ -183,6 +184,7 @@ typedef unsigned short wchar_t;
 #endif
 
 
+
 /* 
   probe for HID USB devices that match relay drivers.
   When matched, add aan entry to the device list.
@@ -257,55 +259,78 @@ void myfilerecursive(char *basePath)
 
 
 int action_sysfs(struct _device_list *device, sds attribute, sds action, sds *reply){
-  int return_code = SUCCESS;
   struct stat stat_buffer;
 
   printf("SysFs on: %s  Action: %s\n",attribute, action);
 
+  // Check that device id is a valid direstory in SysFs
   if (stat(device->id, &stat_buffer) ){
     perror(device->id);
     return FAILURE;
   }
 
   if( !S_ISDIR(stat_buffer.st_mode)) {
-    fprintf(stderr, "%s is a a valid SysFS path to a device\n", device->id);
+    fprintf(stderr, "%s is not a valid path to a SysFS device\n", device->id);
     return FAILURE;
   }
 
   if ( attribute ) {
+    int fd;
+    int length;
+    char input[1025];
+    
     sds file_path = sdscatprintf(sdsempty(), "%s/%s",device->id, attribute); 
-    do {
-      if ( access(file_path, F_OK) ) {
-        fprintf(stderr,"%s is not an accessable attribute of %s\n", attribute, device->id);
-        return_code =  FAILURE;
-        break;
+    
+    // Check permissions
+    sds permission_needed = file_permission_needed(file_path, action ? W_OK : R_OK );
+    if ( sdslen(permission_needed) ){
+      puts(permission_needed);
+      sdsfree(permission_needed);
+      return FAILURE;
+    }
+    sdsfree(permission_needed);
+    
+    // open device attribute
+    if( (fd = open(file_path, action ? O_WRONLY : O_RDONLY)) < 0) {
+      perror("Failed to open sysfs file");
+      *reply = sdsnew("Off-line");
+      return FAILURE;
+    }
+
+    // Write to device attribute
+    if ( action ) {
+      printf("Writing to %s : %s\n", attribute, action);
+      length = write( fd , action, sdslen(action) );
+      if ( length < 0 ) {
+        perror( "unable to write to attribute" );
+        *reply = sdsnew("**output error**");
+        close( fd );
+        return FAILURE;
       }
 
-      // Write top device attribute
-      if ( action ) {
-        if ( access(file_path,W_OK) ){
-          fprintf(stderr,"This user has no write access to %s\n", file_path);
-          return_code =  FAILURE;
-          break;
+    // read from device attribute
+    } else { 
+      *reply = sdscatprintf(sdsempty(),"%s %s ",device->id, attribute);
+    	do {
+        length = read(fd,input, sizeof(input)-1 );
+        if( length >= 0 ) {
+          input[length+1] = 0;
+          *reply = sdscat(*reply,input);
         }
+      }while (length == sizeof(input)-1 );
 
-        printf("Writing to %s : %s\n", attribute, action);
+      if ( length < 0 ) {
+    		perror("Failed to read attribute");
+        *reply = sdscat(*reply,"**input error**");
+        close( fd );
+        return FAILURE;
+      }  
+    } 
 
-      // read from device attribute
-      } else { 
-        if ( access(file_path,R_OK) ){
-          fprintf(stderr,"This user has no read access to %s\n", file_path);
-          return_code =  FAILURE;
-          break;
-        }
-        printf("Reading from %s\n", attribute);
-
-      }
-
-    } while( 0 );
+   	close(fd);
     sdsfree(file_path);
   }
 
-  return return_code;
+  return SUCCESS;
 }
 
