@@ -109,7 +109,7 @@ struct hid_device_info * hidusb_enumerate_match(
       if ( path && strcmp( path, device->path ) )
         break;
 
-      returned_list = returned_list->next = malloc(sizeof(struct hid_device_info));
+      returned_list = returned_list->next = (struct hid_device_info *) malloc(sizeof(struct hid_device_info));
       memcpy(returned_list,device,sizeof(struct hid_device_info));
       returned_list->next = NULL;
     } while (0);
@@ -123,11 +123,84 @@ struct hid_device_info * hidusb_enumerate_match(
   return empty_record.next;
 }
 
+// Find path to coorsponding hidraw device kernel pseudo file.
+sds find_hidraw_path(char *port){
+  sds device_path = sdsempty();
+  GList *sys_path;
+  char *path;
+  struct dirent *dp;
+  DIR *dir;
+
+  if ( !port || !strlen(port) )
+    return device_path;
+
+  // Find path to device kernel pseudo hidraw file 
+  sys_path = finddir( (char *)"/sys/devices", port);
+  if( !sys_path ) {
+    if ( info )
+      puts("sysfs path not found");
+    return device_path;
+  }
+    
+  if ( g_list_length(sys_path) > 1 ) {
+    if ( info ) 
+      puts("too many candidates for sysfs path");
+    finddir_free(sys_path);
+    g_list_free(sys_path);
+    return device_path;
+  }
+
+  path = strdup( (const char*)g_list_nth(sys_path, 0)->data );
+  finddir_free(sys_path);
+  g_list_free(sys_path);
+
+  // Find hidraw directory and name of hidraw device
+  sys_path = finddir( path, (char *)"hidraw");
+
+  if( !sys_path ) {
+    if ( info )
+      puts("sysfs path not found");
+    return device_path;
+  }
+    
+  if ( g_list_length(sys_path) > 1 ) {
+    if ( info ) 
+      puts("too many candidates for sysfs path");
+    finddir_free(sys_path);
+    g_list_free(sys_path);
+    return device_path;
+  }
+
+  path = strdup( (const char*)g_list_nth(sys_path, 0)->data );
+  finddir_free(sys_path);
+  g_list_free(sys_path);
+
+  if ( !(dir = opendir(path)) ){
+    if ( info )
+      puts("Unable to read system path");
+    free( path );
+    return device_path;
+  }
+
+  // Find directory name that starts with hidraw
+  while ((dp = readdir(dir)) != NULL) {
+    if ( dp->d_type != DT_DIR )  
+        continue;
+
+    if( !strncmp("hidraw",dp->d_name,6) ) {
+      device_path = sdscatprintf(device_path,"/dev/%s",dp->d_name );
+      break;
+    }
+  }
+  closedir(dir);
+  return device_path;
+}
+
 /* 
   probe for HID USB devices that match relay drivers.
   When matched, add aan entry to the device list.
 */  
-int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_list){
+int probe_hidusb(int si_index, struct _device_identifier id, GList **device_list){
 
   struct hid_device_info *hid_device, *first_hid_device;
   sds * sds_array;
@@ -157,9 +230,10 @@ int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_lis
   first_hid_device = hid_device = hidusb_enumerate_match(vendor_id, product_id, serial_number, manufacturer_string, id.port);
   while (hid_device) {
     int sdl_index;
-    if ( info ) printf("Found device at %s",hid_device->path);
 
-    // recognize a device
+    if ( info ) printf("Found device at %s\n",hid_device->path);
+
+    // call recognize function for all devices, with this interface
     for(sdl_index = 0; supported_interface[si_index].device[sdl_index].name; sdl_index++ ){
       supported_device = &supported_interface[si_index].device[sdl_index];
       if ( supported_device->recognize && supported_device->recognize(sdl_index, hid_device ) )
@@ -170,54 +244,40 @@ int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_lis
     if ( supported_interface[si_index].device[sdl_index].name ) {
       struct _device_list *entry;
       struct stat stat_buffer;
-      struct group group_buffer, *group_pointer = NULL;
-      struct udev_device * usb_dev;
+
+
+      //struct group group_buffer, *group_pointer = NULL;
+      //struct udev_device * usb_dev;
 
       // Create a new entry in active device list
-      entry = malloc(sizeof(struct _device_list)); 
+      entry = (_device_list*) malloc(sizeof(struct _device_list)); 
       entry->name = sdsnew(supported_device->name);
       // Find device path
 
       entry->id = sdscatprintf(sdsempty(),
-                "hidusb#%04X:%04X:%ls:%ls#%s#%s",
+                "hidusb#%04X:%04X:%ls:%ls#%s",
                 hid_device->vendor_id,
                 hid_device->product_id,
                 hid_device->serial_number ? : L"",
                 hid_device->manufacturer_string ? : L"",
-                hid_device->path ? : "",
-                "/dev/<something>"
+                hid_device->path 
       );
 
-      /*
-      list = udev_enumerate_get_list_entry(enumerate);
+      entry->port = sdsnew(hid_device->path);
+      entry->path = find_hidraw_path(entry->port);
 
-    udev_list_entry_foreach(node, list) 
-    {
-        char *str = NULL;
-        path = udev_list_entry_get_name(node);
-        dev = udev_device_new_from_syspath(udev, path);
-        if  (str = strstr(path, REQUESTED_USB_PORT))
-        {
-             if (str = strstr(str, "event"))
-             {
-                  dev_path = strdup(udev_device_get_devnode(dev));
-                  udev_device_unref(dev);
-                  break;
-             }
-        }
-        udev_device_unref(dev);
-    }
-    */
-      entry->path = sdsnew(hid_device->path ? : "");
-      if ( !stat(hid_device->path, &stat_buffer) ) {
+      if( info ) printf("Permissions %s\n ",file_permissions_string(entry->path));
+        //printf("%s\n", file_permission_needed(entry->path, W_OK));
+
+      if ( sdslen(entry->path) && !stat(entry->path, &stat_buffer) ) {
         struct group *grp;        
         grp = getgrgid(stat_buffer.st_gid);
         entry->group = sdsnew(grp->gr_name);
       } else {
-          entry->group = "unknown";
+          entry->group = (char *)"unknown";
       }
       entry->action = supported_device->action;
-      *device_list = g_slist_append(*device_list, entry);
+      *device_list = g_list_append(*device_list, entry);
 
       if ( info ) 
         printf(" -- Recognized as %s\n",entry->name);

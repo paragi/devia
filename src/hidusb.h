@@ -3,6 +3,6 @@
 
 #include "common.h"
 
-int probe_hidusb(int si_index, struct _device_identifier id, GSList **device_list);
+int probe_hidusb(int si_index, struct _device_identifier id, GList **device_list);
 
-#endif
+#endif  

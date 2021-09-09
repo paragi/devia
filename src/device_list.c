@@ -12,7 +12,6 @@
 #include "hidusb.h"
 #include "sysfs.h"
 
-
 // Dummy devices
 const struct _supported_device dummy_device[] = 
 { 
@@ -24,7 +23,7 @@ const struct _supported_device dummy_device[] =
   },
   { NULL }
 };
-
+ 
 //HID USB devices
 const struct _supported_device hidusb_device[] = 
 {

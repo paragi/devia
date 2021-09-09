@@ -3,7 +3,7 @@ Driver for Nuvoton 8-16 channel USB-HID relay controller
 
 This works with the Nuvoton relay controler.
 
-However the device->path changes when device is unpluged and reattached. 
+However the device->port changes when device is unpluged and reattached. 
 A stable path is needed for identificatio, since it has no serial number.
 
 *
@@ -107,10 +107,11 @@ static int get_nuvoton(hid_device *handle, int *relay_state)
 
   if ( info )
     printf("Sending HID repport:  %s\n",sdsbytes2hex(&hid_msg,sizeof(struct HID_repport),4));  // Free sds
-
   hid_set_nonblocking(handle, 1);
+
   if (hid_write(handle, (unsigned char *)&hid_msg, sizeof(hid_msg)) <= 0)
     return FAILURE;
+
   usleep(1000);
 
   // Read response
@@ -159,7 +160,7 @@ static int set_nuvoton(hid_device *handle, int *relay_state) {
 
   return SUCCESS;
 }
-
+ 
 int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *reply) {
   int relay_id = 0;
   int relay_state = -1;
@@ -167,8 +168,8 @@ int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *
   int return_code = SUCCESS;
   hid_device *handle;
 
-  if ( (handle = hid_open_path(device->path)) <= 0) {
-    perror("Unable to open HID API device");
+  if ( !(handle = hid_open_path(device->port))) {
+    fprintf(stderr, "Unable to open HID API device %s",device->port);
     return FAILURE;      
   }
 
@@ -210,7 +211,7 @@ int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *
 
 // The interface scanner, asks if this is your device
 int recognize_nuvoton(int sdl_index, void *dev_info) {
-  struct hid_device_info *hid_device_info = dev_info; 
+  struct hid_device_info *hid_device_info = (struct hid_device_info *) dev_info; 
 
   if ( hid_device_info
     && hid_device_info->vendor_id == 0x0416

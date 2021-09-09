@@ -189,12 +189,12 @@ typedef unsigned short wchar_t;
   probe for HID USB devices that match relay drivers.
   When matched, add aan entry to the device list.
 */  
-int probe_sysfs(int si_index, struct _device_identifier id, GSList **device_list){
+int probe_sysfs(int si_index, struct _device_identifier id, GList **device_list){
   //const struct _supported_device * supported_device;
   //struct dirent *dp;
   struct stat stat_buffer;
   //DIR *dir;
-  char * test_path[] = {"/sys/class/gpio", "/sys/class/thermal", "/sys/class/lirc", NULL};
+  const char * test_path[] = {"/sys/class/gpio", "/sys/class/thermal", "/sys/class/lirc", NULL};
   assert(supported_interface[si_index].name);
 
   // Check that /sys/class exists
@@ -211,7 +211,7 @@ int probe_sysfs(int si_index, struct _device_identifier id, GSList **device_list
         struct group *grp;        
         
         // Create a new entry in active device list
-        entry = malloc(sizeof(struct _device_list)); 
+        entry = (struct _device_list*)malloc(sizeof(struct _device_list)); 
         entry->name = sdsnew("sysfs");
         entry->id = id.device_id ? 
           sdsnew(id.device_id) : 
@@ -220,7 +220,7 @@ int probe_sysfs(int si_index, struct _device_identifier id, GSList **device_list
         grp = getgrgid(stat_buffer.st_gid);
         entry->group = sdsnew(grp->gr_name);
         entry->action = action_sysfs;
-        *device_list = g_slist_append(*device_list, entry);
+        *device_list = g_list_append(*device_list, entry);
         if ( info ) 
           printf(" -- Recognized as %s\n",entry->name);
       }
@@ -230,33 +230,6 @@ int probe_sysfs(int si_index, struct _device_identifier id, GSList **device_list
 
   return SUCCESS;
 } 
-
-void myfilerecursive(char *basePath)
-{
-    char path[1000];
-    struct dirent *dp;
-    DIR *dir = opendir("/sys/class");
-
-   
-    if (!dir)
-        return;
-
-    while ((dp = readdir(dir)) != NULL)
-    {
-        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
-        {
-            printf("%s\n", dp->d_name);
-            strcpy(path, basePath);
-            strcat(path, "/");
-            strcat(path, dp->d_name);
-
-            //myfilerecursive(path);
-        }
-    }
-
-    closedir(dir);
-}
-
 
 int action_sysfs(struct _device_list *device, sds attribute, sds action, sds *reply){
   struct stat stat_buffer;

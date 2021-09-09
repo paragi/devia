@@ -183,7 +183,7 @@ static libusb_device_handle* open_device_with_vid_pid_serial(uint16_t vendorid, 
          (*relay_info)->relay_type = SAINSMART_USB_RELAY_TYPE;
          strcpy((*relay_info)->serial, (char *)sernum);
          // Allocate new struct
-         rinfo = malloc(sizeof(relay_info_t));
+         rinfo = (relay_info_t*) malloc(sizeof(relay_info_t));
          rinfo->next = NULL;
          // Link current to new struct
          (*relay_info)->next = rinfo;

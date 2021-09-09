@@ -29,6 +29,7 @@ struct _device_identifier {
 struct _device_list {
   sds name;
   sds id;
+  sds port;
   sds path;
   sds group;
   int (* action)( struct _device_list *, sds, sds, sds *);
@@ -49,7 +50,7 @@ struct _supported_device {
 struct _supported_interface {
   const char *name;
   const char *description;
-  int (*probe)(int si_index, struct _device_identifier id, GSList **device_list);
+  int (*probe)(int si_index, struct _device_identifier id, GList **device_list);
   const struct _supported_device *device;
 };
 

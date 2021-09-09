@@ -129,7 +129,7 @@ void print_arguments(struct arguments argument) {
 // Parse arguments and options. Arguments are parsed, one at a time, as they occur
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   /* Get the input argument from argp_parse, which we know is a pointer to our structure. */
-  struct arguments *argument = state->input;
+  struct arguments *argument = (struct arguments*)state->input;
 
   switch (key) {
     case 'l': 
@@ -230,7 +230,7 @@ int main (int argc, char **argv) {
   int i;
   struct arguments argument;
   struct _device_list *entry;
-  GSList *device_list = NULL, *iterator = NULL;
+  GList *device_list = NULL, *iterator = NULL;
 
   // Parse arguments
   memset(&argument,0,sizeof(argument));
@@ -269,7 +269,7 @@ int main (int argc, char **argv) {
   if ( info && argument.list ) 
       puts("----------------------------------------------------------------------");
   
-  if ( !g_slist_length(device_list) )
+  if ( !g_list_length(device_list) )
     puts("No devices found");
 
   else for (iterator = device_list; iterator; iterator = iterator->next) {
@@ -292,10 +292,10 @@ int main (int argc, char **argv) {
     } else {
       sds reply = sdsempty();
       entry->action(entry, argument.attribute, argument.action, &reply);
-      printf("%s\n",reply[0] ? reply : "No reply");
+      printf("%s %s\n",entry->id, reply[0] ? reply : "No reply");
     }
   }
-  g_slist_free(device_list);
+  g_list_free(device_list);
   exit (0);
 }
 #endif

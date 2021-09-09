@@ -198,7 +198,7 @@ int detect_relay_card_hidapi(char* portname, uint8_t* num_relays, char* serial, 
          (*relay_info)->relay_type = HID_API_RELAY_TYPE;
          strcpy((*relay_info)->serial, (char *)buf);
          // Allocate new struct
-         rinfo = malloc(sizeof(relay_info_t));
+         rinfo = (relay_info_t*)malloc(sizeof(relay_info_t));
          rinfo->next = NULL;
          // Link current to new struct
          (*relay_info)->next = rinfo;

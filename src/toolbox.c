@@ -24,6 +24,9 @@
 #include <sys/stat.h>
 
 /* Linux */
+#include <glib.h>
+
+// Application
 #include "sds.h"
 #include "toolbox.h"
 
@@ -53,7 +56,7 @@ sds sdsint2bin(long int value ,int len) {
   char buffer[65];
   sds str;
 
-  if(len+1 > sizeof(buffer)) len = sizeof(buffer)-1;
+  if(len+1 > (int)sizeof(buffer) ) len = sizeof(buffer)-1;
   buffer[len] = 0;
   for (int i = len-1; i >= 0; i--) 
     buffer[i] = value & (1<<(len-i-1)) ? '1' : '0';
@@ -194,4 +197,59 @@ sds file_permission_needed(char * path, int access_type){
     );
 
   return sdsnew("not accessible");
+}
+
+/* Find a directory, by searching basepath tree
+
+  Return a list of matching paths
+
+  use finddir_free to free list
+*/
+int _finddir(char *basepath, char *searchdir, GList **list) {
+  struct dirent *dp;
+  DIR *dir;
+  sds path;
+  
+  dir = opendir(basepath);
+  if (!dir){
+    perror("finddir failed");
+    return FAILURE;
+  }
+
+  while ((dp = readdir(dir)) != NULL) {
+    if ( !strcmp(dp->d_name, ".") != 0 || !strcmp(dp->d_name, "..") ) 
+      continue;
+
+    if ( dp->d_type != DT_DIR )  
+      continue;
+
+    path = sdscatprintf(sdsempty(),"%s/%s",basepath,dp->d_name );
+
+    if ( !strcmp(  dp->d_name , searchdir ) ) {
+      *list = g_list_append(*list, path);
+
+    } else {
+      _finddir( path, searchdir, list);
+      sdsfree(path);
+    }
+  }
+
+  closedir(dir);
+
+  return SUCCESS;
+}
+
+GList * finddir(char *basepath, char *searchdir) {
+  GList * list = NULL;
+  if( _finddir(basepath, searchdir, &list) != SUCCESS )
+    return NULL;
+  return list;  
+}
+
+void finddir_free(GList *list){
+  GList *iterator = NULL;
+
+  for (iterator = list; iterator; iterator = iterator->next) {
+    sdsfree((sds)iterator->data);
+  }
 }

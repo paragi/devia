@@ -148,7 +148,7 @@ struct hid_device_info * hid_enumerate_match(
 
       print_hid_device_info2(device);
       
-      returned_list = returned_list->next = malloc(sizeof(struct hid_device_info));
+      returned_list = returned_list->next = (struct hid_device_info *)malloc(sizeof(struct hid_device_info));
       memcpy(returned_list,device,sizeof(struct hid_device_info));
       returned_list->next = NULL;
     } while (0);
