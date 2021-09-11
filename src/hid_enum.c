@@ -265,7 +265,7 @@ struct hidraw_device_info * enumerate_hidraw_devices(
           && ( !manufacturer_string || !manufacturer_string[0]|| ( device_info.manufacturer && !strcmp(manufacturer_string,device_info.manufacturer) ) ) 
         ) {
           // Store devide info in list
-          dev_info = (hidraw_device_info*)malloc(sizeof(struct hidraw_device_info));
+          dev_info = (struct hidraw_device_info*)malloc(sizeof(struct hidraw_device_info));
           memcpy(dev_info, &device_info, sizeof(device_info));
           dev_info->next = NULL;
           if( ! first_entry ) {

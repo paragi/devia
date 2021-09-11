@@ -274,20 +274,16 @@ int main (int argc, char **argv) {
 
   else for (iterator = device_list; iterator; iterator = iterator->next) {
     entry = (struct _device_list *)iterator->data;
+
     assert(entry->name);
     assert(entry->id);
-    assert(entry->path);
-    assert(entry->group);
-
+ 
     // List device and group owner (to discourage use of root privilliges)  
     if (argument.list) {
-      printf("%s  id: %s  path: %s  group: %s\n", 
-        entry->name, 
-        entry->id, 
-        entry->path, 
-        entry->group
-      );
-
+      printf("%s  id: %s",entry->name, entry->id);
+      if ( sdslen(entry->path) ) printf(" Path: %s",entry->path);
+      if ( sdslen(entry->group) ) printf(" Group: %s",entry->group);
+      puts("");
     // Interact with matched devices
     } else {
       sds reply = sdsempty();
@@ -295,7 +291,8 @@ int main (int argc, char **argv) {
       printf("%s %s\n",entry->id, reply[0] ? reply : "No reply");
     }
   }
-  g_list_free(device_list);
+
+  //g_list_free(device_list);
   exit (0);
 }
 #endif

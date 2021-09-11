@@ -169,7 +169,7 @@ sds file_permission_needed(char * path, int access_type){
   access_type &= 7;
 
   if (stat(path, &stat_buffer) )
-    return sdsnew("does not exists or is inaccessible");
+    return sdsnew("File does not exists or is inaccessible");
 
   if ( !access(path, access_type) ) 
     return sdsempty();

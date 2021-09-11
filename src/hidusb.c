@@ -50,8 +50,8 @@ typedef unsigned short wchar_t;
 #define DEBUG
 // #define TEST
 
-void print_hid_device_info(struct hid_device_info * dev_info){
-  printf("Device info:\n");
+void print_hid_device_info(struct hid_device_info * dev_info, struct _device_list *entry){
+  //printf("Device info:\n");
   printf("  Vendor: %04X:%04X\n",dev_info->vendor_id, dev_info->product_id);
   printf("  Path: %s\n",dev_info->path);
   printf("  Serial number: %ls\n",dev_info->serial_number);
@@ -59,7 +59,20 @@ void print_hid_device_info(struct hid_device_info * dev_info){
   printf("  Manufacturer_string: %ls\n",dev_info->manufacturer_string);
   printf("  Interface number %d\n",dev_info->interface_number);
   printf("  Product_string: %ls\n",dev_info->product_string);
-  printf("  next: %p\n",(void*)dev_info->next);
+  //printf("  next: %p\n",(void*)dev_info->next);
+  puts("  ---");
+  printf("  Device name: %s\n",entry->name);
+  printf("  id: %s\n",entry->id);
+  printf("  Port: %s\n",entry->port);
+  if( sdslen(entry->path) ) {
+    printf("  Path: %s\n",entry->path);
+    printf("  Group: %s\n",entry->group);
+      printf("  %s %s\n",
+        file_permissions_string(entry->path),
+        file_permission_needed(entry->path, X_OK)
+      );
+  }
+
 }  
 
 // Extension function for hid_enumerate(vendor_id, product_id) with extra match criterias
@@ -81,40 +94,33 @@ struct hid_device_info * hidusb_enumerate_match(
     || device->path == NULL) { // Test with 0 ,0 
     return NULL;  
   }
- 
-  if ( info )
-    print_hid_device_info(device);
-  
-  while (device ) {
-    do {
-      if( !device->path )
-        break;
-      
-      if (!device->product_string ) // Claimed already by other process
-        break;
 
-      // Match criterias
-      if ( serial_number
-        && !device->serial_number
-        && swprintf(wstr, sizeof(wstr), L"%hs", serial_number)
-        && !wcscmp(wstr, device->serial_number) ) 
-          break;
+  for ( ; device ; device = device->next) {
+    if( !device->path )
+      continue;
+    
+    if (!device->product_string ) // Claimed already by other process
+      continue;
 
-      if ( manufacturer_string
-        && !device->manufacturer_string
-        && swprintf(wstr, sizeof(wstr), L"%hs", manufacturer_string)
-        && !wcscmp(wstr, device->manufacturer_string) ) 
-          break;
+    // Match criterias
+    if ( serial_number
+      && !device->serial_number
+      && swprintf(wstr, sizeof(wstr), L"%hs", serial_number)
+      && !wcscmp(wstr, device->serial_number) ) 
+        continue;
 
-      if ( path && strcmp( path, device->path ) )
-        break;
+    if ( manufacturer_string
+      && !device->manufacturer_string
+      && swprintf(wstr, sizeof(wstr), L"%hs", manufacturer_string)
+      && !wcscmp(wstr, device->manufacturer_string) ) 
+        continue;
 
-      returned_list = returned_list->next = (struct hid_device_info *) malloc(sizeof(struct hid_device_info));
-      memcpy(returned_list,device,sizeof(struct hid_device_info));
-      returned_list->next = NULL;
-    } while (0);
+    if ( path && strcmp( path, device->path ) )
+      continue;
 
-    device = device->next;
+    returned_list = returned_list->next = (struct hid_device_info *) malloc(sizeof(struct hid_device_info));
+    memcpy(returned_list,device,sizeof(struct hid_device_info));
+    returned_list->next = NULL;
   }
   //hid_free_enumeration(device);
 
@@ -130,21 +136,24 @@ sds find_hidraw_path(char *port){
   char *path;
   struct dirent *dp;
   DIR *dir;
+printf("test1: %s\n",port);    
 
   if ( !port || !strlen(port) )
     return device_path;
+printf("test2: %s\n",port);    
 
   // Find path to device kernel pseudo hidraw file 
   sys_path = finddir( (char *)"/sys/devices", port);
+printf("test3: %s\n",port);    
   if( !sys_path ) {
     if ( info )
-      puts("sysfs path not found");
+      puts("  sysfs path not found");
     return device_path;
   }
-    
+printf("test4: %s\n",port);    
   if ( g_list_length(sys_path) > 1 ) {
     if ( info ) 
-      puts("too many candidates for sysfs path");
+      puts("  too many candidates for sysfs path");
     finddir_free(sys_path);
     g_list_free(sys_path);
     return device_path;
@@ -159,13 +168,13 @@ sds find_hidraw_path(char *port){
 
   if( !sys_path ) {
     if ( info )
-      puts("sysfs path not found");
+      puts("  sysfs path not found");
     return device_path;
   }
     
   if ( g_list_length(sys_path) > 1 ) {
     if ( info ) 
-      puts("too many candidates for sysfs path");
+      puts("  too many candidates for sysfs path");
     finddir_free(sys_path);
     g_list_free(sys_path);
     return device_path;
@@ -177,7 +186,7 @@ sds find_hidraw_path(char *port){
 
   if ( !(dir = opendir(path)) ){
     if ( info )
-      puts("Unable to read system path");
+      puts("  Unable to read system path");
     free( path );
     return device_path;
   }
@@ -243,17 +252,13 @@ int probe_hidusb(int si_index, struct _device_identifier id, GList **device_list
     // Add entry to list of active devices, if recognized        
     if ( supported_interface[si_index].device[sdl_index].name ) {
       struct _device_list *entry;
-      struct stat stat_buffer;
-
-
-      //struct group group_buffer, *group_pointer = NULL;
-      //struct udev_device * usb_dev;
 
       // Create a new entry in active device list
-      entry = (_device_list*) malloc(sizeof(struct _device_list)); 
-      entry->name = sdsnew(supported_device->name);
-      // Find device path
+      entry = (struct _device_list *) malloc(sizeof(struct _device_list)); 
+      memset(entry, 0, sizeof(struct _device_list));
+      *device_list = g_list_append(*device_list, entry);
 
+      entry->name = sdsnew(supported_device->name);
       entry->id = sdscatprintf(sdsempty(),
                 "hidusb#%04X:%04X:%ls:%ls#%s",
                 hid_device->vendor_id,
@@ -262,31 +267,20 @@ int probe_hidusb(int si_index, struct _device_identifier id, GList **device_list
                 hid_device->manufacturer_string ? : L"",
                 hid_device->path 
       );
-
       entry->port = sdsnew(hid_device->path);
       entry->path = find_hidraw_path(entry->port);
-
-      if( info ) printf("Permissions %s\n ",file_permissions_string(entry->path));
-        //printf("%s\n", file_permission_needed(entry->path, W_OK));
-
-      if ( sdslen(entry->path) && !stat(entry->path, &stat_buffer) ) {
-        struct group *grp;        
-        grp = getgrgid(stat_buffer.st_gid);
-        entry->group = sdsnew(grp->gr_name);
-      } else {
-          entry->group = (char *)"unknown";
-      }
+      entry->group = sdsempty();
       entry->action = supported_device->action;
-      *device_list = g_list_append(*device_list, entry);
 
       if ( info ) 
-        printf(" -- Recognized as %s\n",entry->name);
-      
+        print_hid_device_info(hid_device, entry);
+
     } else if ( info ) 
       printf(" -- Not recognized\n");
 
     hid_device = hid_device->next; 
   }
+
   hid_free_enumeration(first_hid_device);
   return SUCCESS;
 }   

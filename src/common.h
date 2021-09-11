@@ -33,7 +33,6 @@ struct _device_list {
   sds path;
   sds group;
   int (* action)( struct _device_list *, sds, sds, sds *);
-  struct _device_list *next;
 };
 
 extern int info;

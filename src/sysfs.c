@@ -190,43 +190,94 @@ typedef unsigned short wchar_t;
   When matched, add aan entry to the device list.
 */  
 int probe_sysfs(int si_index, struct _device_identifier id, GList **device_list){
-  //const struct _supported_device * supported_device;
-  //struct dirent *dp;
+  struct _device_list *entry;
+  struct group *grp;        
   struct stat stat_buffer;
-  //DIR *dir;
-  const char * test_path[] = {"/sys/class/gpio", "/sys/class/thermal", "/sys/class/lirc", NULL};
+  sds path = NULL;
+  GList * path_list = NULL, *iterator = NULL;;
+  char * buffer = NULL;
+
+
   assert(supported_interface[si_index].name);
 
   // Check that /sys/class exists
-  if (!access("/sys/class", F_OK)) {
-    
-    if(id.device_id){
-      test_path[0] = id.device_id;
-      test_path[1] = NULL;
+  if ( access("/sys/devices", F_OK) ) {
+    if ( info ) printf("No sysFs\n");
+    return FAILURE;
+  }
+
+  if(id.device_id){
+    // Full path
+    if (strchr( id.device_id,'/' ) ) {
+      if ( !strncmp(id.device_id,(char * )"/sys/",5) ){
+        buffer = realpath(id.device_id,NULL);
+        path = sdsnew(buffer);
+        free(buffer);
+      // Path relative to /sys/devices/
+      } else {
+        sds path1 = sdscatprintf(sdsempty(),"/sys/devices/%s",id.device_id);
+        buffer = realpath(path1,NULL);
+        sdsfree(path1);
+        path = sdsnew(buffer);
+        free(buffer);
+
+      }
+
+      path_list = g_list_append(path_list, path);
+    // find dir  
+    } else {
+
+      path_list = finddir((char *)"/sys/devices",id.device_id);
     }
 
-    for(int i = 0; test_path[i]; i++){
-      if (!stat(test_path[i], &stat_buffer) && S_ISDIR(stat_buffer.st_mode)) {
-        struct _device_list *entry;
-        struct group *grp;        
-        
-        // Create a new entry in active device list
-        entry = (struct _device_list*)malloc(sizeof(struct _device_list)); 
-        entry->name = sdsnew("sysfs");
-        entry->id = id.device_id ? 
-          sdsnew(id.device_id) : 
-          sdscatprintf(sdsempty(),".../%s",sdsnew( g_path_get_basename(strndup(test_path[i],strlen(test_path[i])+1))));
-        entry->path = sdsnew(id.device_id ? :"n/a");
-        grp = getgrgid(stat_buffer.st_gid);
-        entry->group = sdsnew(grp->gr_name);
-        entry->action = action_sysfs;
-        *device_list = g_list_append(*device_list, entry);
-        if ( info ) 
-          printf(" -- Recognized as %s\n",entry->name);
+  // Nothing to do  
+  }  else {
+    return SUCCESS;
+  }
+ 
+  if ( ! path_list ) {
+    if ( info ) puts("No sysfs path found");
+      return FAILURE;
+  }
+
+  for (iterator = path_list; iterator; iterator = iterator->next) {
+  
+    // Check that path is within /sys/
+    if ( iterator->data && sdslen( (sds)iterator->data )  ) {      
+      if ( strncmp((char * )iterator->data,(char * )"/sys/",5) ){
+        fprintf(stderr,"%s is out of bounds path.\n",(char *)iterator->data);
+        return FAILURE;
       }
+    } 
+    assert( iterator->data );
+
+    if (stat((char *)iterator->data, &stat_buffer) && S_ISDIR(stat_buffer.st_mode)) {
+      perror("");
+      return FAILURE;
     }
-  } else if ( info ) 
-    printf(" -- Not recognized\n");
+
+    if( !S_ISDIR(stat_buffer.st_mode) ) {
+      fprintf(stderr,"%s is not a directory.\n", (char *)iterator->data);
+      continue;
+    }
+
+    if ( info ) printf("Found device at %s\n",(char *)iterator->data);
+
+    // Create a new entry in active device list
+    entry = (struct _device_list *) malloc(sizeof(struct _device_list)); 
+    memset(entry, 0, sizeof(struct _device_list));
+    *device_list = g_list_append(*device_list, entry); 
+
+    entry->name = sdsnew("sysfs");
+    entry->id = sdsnew((char *)iterator->data);
+    entry->path = entry->id;
+    grp = getgrgid(stat_buffer.st_gid);
+    entry->group = sdsnew(grp->gr_name);
+    entry->action = action_sysfs;
+
+    if ( info ) 
+      printf(" -- Recognized as %s\n",entry->name);
+  }
 
   return SUCCESS;
 } 
@@ -234,7 +285,8 @@ int probe_sysfs(int si_index, struct _device_identifier id, GList **device_list)
 int action_sysfs(struct _device_list *device, sds attribute, sds action, sds *reply){
   struct stat stat_buffer;
 
-  printf("SysFs on: %s  Action: %s\n",attribute, action);
+  if ( info )
+    printf("SysFs on: %s  Action: %s\n",attribute, action);
 
   // Check that device id is a valid direstory in SysFs
   if (stat(device->id, &stat_buffer) ){
@@ -283,7 +335,7 @@ int action_sysfs(struct _device_list *device, sds attribute, sds action, sds *re
 
     // read from device attribute
     } else { 
-      *reply = sdscatprintf(sdsempty(),"%s %s ",device->id, attribute);
+      *reply = sdscatprintf(sdsempty(),"%s ", attribute);
     	do {
         length = read(fd,input, sizeof(input)-1 );
         if( length >= 0 ) {
