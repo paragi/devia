@@ -51,15 +51,16 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC):	$(OBJS)
+	sed -i "s/\#define BUILD_NUMBER .*/\#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
+	sed -i "s/\#define BUILD_DATE.*/\#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
 	$(CXX)	$(OBJS) -o $@ $(LDFLAGS)
 	if [ ! -f $(TARGET_EXEC) ] ; then ln -s $(BUILD_DIR)/$(TARGET_EXEC) ./; fi
 
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c 
 	mkdir -p $(dir $@)
-	sed -i "s/\#define BUILD_NUMBER .*/\#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
-	sed -i "s/\#define BUILD_DATE.*/\#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CFLAGS) -c $< -o $@
+# $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Build step for C++ source
 $(BUILD_DIR)/%.cpp.o:	%.cpp 

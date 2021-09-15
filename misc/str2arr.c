@@ -32,9 +32,6 @@
 #define SUCCESS 0
 #define FAILURE -1
 
-#define TEST
-
-
 typedef struct string {
   char *data;
   size_t len;
@@ -122,6 +119,8 @@ array_t str2arr(char *string, char *delimiter) {
 
   return arr;
 }
+
+//#define TEST
 
 #ifdef TEST
 
