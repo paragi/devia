@@ -121,7 +121,7 @@ int crelay_detect_all_relay_cards(relay_info_t** relay_info)
    relay_info_t* my_relay_info;
    
    /* Create first list element */
-   my_relay_info = malloc(sizeof(relay_info_t));
+   my_relay_info = (relay_info_t*)malloc(sizeof(relay_info_t));
    my_relay_info->next = NULL;
 
    /* Return pointer to first element to caller */
@@ -160,7 +160,7 @@ int crelay_detect_relay_card(char* portname, uint8_t* num_relays, char* serial, 
    {
       if ((*relay_data[i].detect_relay_card_fun)(portname, num_relays, serial, NULL) == 0)
       {
-         relay_type=i;
+         relay_type=(relay_type_t) i;
          return 0;
       }
    }

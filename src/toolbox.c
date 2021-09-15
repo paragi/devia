@@ -1,3 +1,9 @@
+/*
+  Simon's toolbox
+  (c) 2021 Simon Rigét @ paragi.dk
+
+  Free to copy, with reference to author
+*/
 
 /* C */
 #include <stdio.h>
@@ -12,11 +18,15 @@
 #include <argp.h>
 
 /* Unix */
-
+#include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/stat.h>
 
 /* Linux */
+#include <glib.h>
 
-
+// Application
 #include "sds.h"
 #include "toolbox.h"
 
@@ -46,7 +56,7 @@ sds sdsint2bin(long int value ,int len) {
   char buffer[65];
   sds str;
 
-  if(len+1 > sizeof(buffer)) len = sizeof(buffer)-1;
+  if(len+1 > (int)sizeof(buffer) ) len = sizeof(buffer)-1;
   buffer[len] = 0;
   for (int i = len-1; i >= 0; i--) 
     buffer[i] = value & (1<<(len-i-1)) ? '1' : '0';
@@ -86,3 +96,160 @@ char *strtounical(char * source) {
   return source;  
 }
 
+// Create a ls -l like file permission string for debug purposes 
+// Modified version of code by askovpen
+sds file_permissions_string(char * path){
+  struct group *grp;   
+  struct passwd *pw;
+  sds permission_str;
+  struct stat stat_buffer;
+  static const char *rwx[] = {"---", "--x", "-w-", "-wx","r--", "r-x", "rw-", "rwx"};
+  static char bits[11];
+
+  if (stat(path, &stat_buffer) )
+    return sdsnew("File does not exists or is inaccessible") ;
+
+  // Set file type 
+  if (S_ISREG(stat_buffer.st_mode))         bits[0] = '-';
+  else if (S_ISDIR(stat_buffer.st_mode))    bits[0] = 'd';
+  else if (S_ISBLK(stat_buffer.st_mode))    bits[0] = 'b';
+  else if (S_ISCHR(stat_buffer.st_mode))    bits[0] = 'c';
+  #ifdef S_ISFIFO  
+    else if (S_ISFIFO(stat_buffer.st_mode)) bits[0] = 'p';
+  #endif  
+  #ifdef S_ISLNK
+    else if (S_ISLNK(stat_buffer.st_mode))  bits[0] = 'l';
+  #endif 
+  #ifdef S_ISSOCK
+    else if (S_ISSOCK(stat_buffer.st_mode)) bits[0] = 's';
+  #endif 
+  /* Solaris 2.6, etc. */
+  #ifdef S_ISDOOR
+    else if (S_ISDOOR(stat_buffer.st_mode)) bits[0] = 'D';
+  #endif  
+  // Unknown type -- possibly a regular file? 
+  else                                      bits[0] = '?';
+
+  // Set rwx for owner, group  and anyone
+  strcpy(&bits[1], rwx[(stat_buffer.st_mode >> 6)& 7]);
+  strcpy(&bits[4], rwx[(stat_buffer.st_mode >> 3)& 7]);
+  strcpy(&bits[7], rwx[(stat_buffer.st_mode & 7)]);
+  if (stat_buffer.st_mode & S_ISUID)
+    bits[3] = (stat_buffer.st_mode & S_IXUSR) ? 's' : 'S';
+  if (stat_buffer.st_mode & S_ISGID)
+    bits[6] = (stat_buffer.st_mode & S_IXGRP) ? 's' : 'l';
+  if (stat_buffer.st_mode & S_ISVTX)
+    bits[9] = (stat_buffer.st_mode & S_IXOTH) ? 't' : 'T';
+  bits[10] = '\0';
+
+  pw = getpwuid(stat_buffer.st_uid);
+  grp = getgrgid(stat_buffer.st_gid); 
+  permission_str = sdscatprintf(sdsempty(),"%s %s:%s",bits,pw->pw_name,grp->gr_name);
+
+  return permission_str ;
+}
+
+/*
+  Return a human readable string, that explains the requirements to
+  do the requested operation.
+  operrations are as defined im unistd.h :
+    R_OK 4	Test for read permission. 
+    W_OK 2	Test for write permission.  
+    X_OK 1	Test for execute permission.  
+    F_OK 0  Test taht file exists
+
+  if the current user has permissions, return an empty string.
+*/
+sds file_permission_needed(char * path, int access_type){
+  struct group *grp;   
+  struct passwd *pw;
+  struct stat stat_buffer;
+  static char current_username[100];
+
+  access_type &= 7;
+
+  if (stat(path, &stat_buffer) )
+    return sdsnew("File does not exists or is inaccessible");
+
+  if ( !access(path, access_type) ) 
+    return sdsempty();
+
+  pw = getpwuid(stat_buffer.st_uid);
+  grp = getgrgid(stat_buffer.st_gid);
+  getlogin_r(current_username, sizeof(current_username));
+
+  // Test group
+  if ( (stat_buffer.st_mode >> 3) & access_type ) 
+    return sdscatprintf(
+      sdsempty(),
+      "must be a member for group '%s' (usermod -aG %s %s)",
+      grp->gr_name,
+      grp->gr_name,
+      current_username
+    );
+  
+  // Test user
+  if ( (stat_buffer.st_mode >> 6) & access_type ) 
+    return sdscatprintf(
+      sdsempty(),
+      "login as '%s' ",
+      pw->pw_name
+    );
+
+  return sdsnew("not accessible");
+}
+
+/* Find a directory, by searching basepath tree
+
+  Return a list of matching paths
+
+  use finddir_free to free list
+*/
+int _finddir(char *basepath, char *searchdir, GList **list) {
+  struct dirent *dp;
+  DIR *dir;
+  sds path;
+  
+  dir = opendir(basepath);
+  if (!dir){
+    perror("finddir failed");
+    return FAILURE;
+  }
+
+  while ((dp = readdir(dir)) != NULL) {
+    if ( !strcmp(dp->d_name, ".") != 0 || !strcmp(dp->d_name, "..") ) 
+      continue;
+
+    if ( dp->d_type != DT_DIR )  
+      continue;
+
+    path = sdscatprintf(sdsempty(),"%s/%s",basepath,dp->d_name );
+
+    if ( !strcmp(  dp->d_name , searchdir ) ) {
+      *list = g_list_append(*list, path);
+
+    } else {
+      _finddir( path, searchdir, list);
+      sdsfree(path);
+    }
+  }
+
+  closedir(dir);
+
+  return SUCCESS;
+}
+
+GList * finddir(char *basepath, char *searchdir) {
+  GList * list = NULL;
+  if( _finddir(basepath, searchdir, &list) != SUCCESS )
+    return NULL;
+  return list;  
+}
+
+void finddir_free(GList *list){
+  GList *iterator = NULL;
+
+  for (iterator = list; iterator; iterator = iterator->next) {
+    sdsfree((sds)iterator->data);
+  }
+}

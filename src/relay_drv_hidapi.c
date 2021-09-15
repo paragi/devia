@@ -83,11 +83,35 @@
  * 
  *****************************************************************************/ 
 
+/* C */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
+#include <locale.h>
+#include <errno.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <assert.h>
+#include <malloc.h>
+#include <stddef.h>
+#include <wchar.h>
+#include <stdbool.h>
+
+/* Unix */
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/utsname.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <grp.h>
+
+/* Linux */
 #include <hidapi/hidapi.h>
+#include <glib.h>
+#include <libudev.h>
+
 
 #include "relay_drv.h"
 
@@ -174,7 +198,7 @@ int detect_relay_card_hidapi(char* portname, uint8_t* num_relays, char* serial, 
          (*relay_info)->relay_type = HID_API_RELAY_TYPE;
          strcpy((*relay_info)->serial, (char *)buf);
          // Allocate new struct
-         rinfo = malloc(sizeof(relay_info_t));
+         rinfo = (relay_info_t*)malloc(sizeof(relay_info_t));
          rinfo->next = NULL;
          // Link current to new struct
          (*relay_info)->next = rinfo;

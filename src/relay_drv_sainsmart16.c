@@ -183,7 +183,7 @@ static int get_mask(hid_device *handle, uint16_t *bitmap)
   }
 
   /* printf("DBG: get_mask = 0x%04x\n", hid_msg.bitmap); */
-  *bitmap = mask;
+  *bitmap = (uint16_t) mask;
 
   return 0;
 }
@@ -243,7 +243,7 @@ int detect_relay_card_sainsmart_16chan(char* portname, uint8_t* num_relays, char
          (*relay_info)->relay_type = SAINSMART16_USB_RELAY_TYPE;
          strcpy((*relay_info)->serial, nextdev->path);
          // Allocate new struct
-         rinfo = malloc(sizeof(relay_info_t));
+         rinfo = (relay_info_t*)malloc(sizeof(relay_info_t));
          rinfo->next = NULL;
          // Link current to new struct
          (*relay_info)->next = rinfo;

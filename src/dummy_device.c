@@ -13,7 +13,7 @@
 #include "common.h"
 
 // Dummy interface
-int probe_dummy(int si_index, struct _device_identifier id, GSList **device_list){
+int probe_dummy(int si_index, struct _device_identifier id, GList **device_list){
   int sdl_index;
   const struct _supported_device * supported_device;
   struct _device_list *entry;
@@ -34,13 +34,13 @@ int probe_dummy(int si_index, struct _device_identifier id, GSList **device_list
     // Add entry to list of active devices, if recognized        
     if ( supported_interface[si_index].device[sdl_index].name ) {
       // Create a new entry in active device list, and push it infront of the list
-      entry = malloc(sizeof(struct _device_list)); 
+      entry = (struct _device_list*)malloc(sizeof(struct _device_list)); 
       entry->name   = sdscatprintf(sdsnew(supported_device->name), " - Device #%d",i);
       entry->id     = sdscatprintf(sdsempty(), "123-%d",i);
       entry->path   = sdsnew("no path");
-      entry->group   = "No group";
+      entry->group   = (char *)"No group";
       entry->action = supported_device->action;
-      *device_list = g_slist_append(*device_list, entry);
+      *device_list = g_list_append(*device_list, entry);
 
       if ( info ) 
         printf(" -- Recognized as %s\n",entry->name);
@@ -51,13 +51,11 @@ int probe_dummy(int si_index, struct _device_identifier id, GSList **device_list
   return SUCCESS;
 }    
 
-
 // Dummy device
 int action_dummy(struct _device_list *device, sds attribute, sds action, sds *reply){
   *reply = sdscatprintf(sdsempty(),"%s = %s",attribute,action ? : "OFF-LINE");
   return SUCCESS;
 }
-
 
 int recognize_dummy(int sdl_index, void * dev_info ) {
   return true;     

@@ -34,7 +34,7 @@
 
 #define DEBUG 1
 
-#define debug(...) do { if (DEBUG) fprintf(stderr, "Debug: "__VA_ARGS__); } while (0)
+#define debug(...) do { if (DEBUG) fprintf(stderr, "Debug: " __VA_ARGS__); } while (0)
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -73,22 +73,22 @@ void print_info(struct hidraw_device_info *dev_info){
   printf("  next: %p\n",(void*)dev_info->next);
 }
 
-void free_hid_device_info_subelements(struct hidraw_device_info * this){
-  free(this->device_node);
-  free(this->serial_number);
-  free(this->manufacturer);
-  free(this->product);
-  free(this->port);
-  free(this->vendor_name );
-  free(this->id );
+void free_hid_device_info_subelements(struct hidraw_device_info * _this){
+  free(_this->device_node);
+  free(_this->serial_number);
+  free(_this->manufacturer);
+  free(_this->product);
+  free(_this->port);
+  free(_this->vendor_name );
+  free(_this->id );
 }
 
-void free_enumerate_hid_devices(struct hidraw_device_info * this){
-  while( this != NULL){
-    struct hidraw_device_info * next = this->next;
-    free_hid_device_info_subelements(this);
-    free(this);
-    this = next;
+void free_enumerate_hid_devices(struct hidraw_device_info * _this){
+  while( _this != NULL){
+    struct hidraw_device_info * next = _this->next;
+    free_hid_device_info_subelements(_this);
+    free(_this);
+    _this = next;
   }
 }  
 
@@ -265,7 +265,7 @@ struct hidraw_device_info * enumerate_hidraw_devices(
           && ( !manufacturer_string || !manufacturer_string[0]|| ( device_info.manufacturer && !strcmp(manufacturer_string,device_info.manufacturer) ) ) 
         ) {
           // Store devide info in list
-          dev_info = malloc(sizeof(struct hidraw_device_info));
+          dev_info = (struct hidraw_device_info*)malloc(sizeof(struct hidraw_device_info));
           memcpy(dev_info, &device_info, sizeof(device_info));
           dev_info->next = NULL;
           if( ! first_entry ) {
@@ -433,7 +433,7 @@ int h_open(const char *path)
 		if (res < 0) {
 			perror("HIDIOCGRDESC");
 		} else {
-			/* Determine if this device uses numbered reports. */
+			/* Determine if _this device uses numbered reports. */
 			;//use = uses_numbered_reports(rpt_desc.value,rpt_desc.size);
 
 		}
@@ -498,7 +498,7 @@ static int get_relay_state(hid_device *handle)
      printf("\n"); 
   #endif
 
-  if ( (i = hid_write(handle, hid_msg.raw, sizeof(hid_msg))) <= 0) {
+  if ( (i = hid_write(handle, (unsigned char*) hid_msg.raw, sizeof(hid_msg))) <= 0) {
     perror("Failed to write to HID device");
     return FAILURE;
   }
@@ -506,7 +506,7 @@ printf("# %d\n",i);
 
   // Read response
   memset(hid_msg.raw,0,sizeof(hid_msg));
-  if (hid_read(handle, hid_msg.raw, sizeof(hid_msg)) < 0) {
+  if (hid_read(handle, (unsigned char*)hid_msg.raw, sizeof(hid_msg)) < 0) {
     perror("Failed to read from HID device");
     return FAILURE;
   }

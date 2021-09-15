@@ -179,22 +179,22 @@ void print_struct(struct usb_device_info_extendet * dev_info){
   printf("  next: %p\n",(void*)dev_info->next);
 }
 
-void free_usb_device_info_subelements(struct usb_device_info_extendet * this){
-  free(this->device_node);
-  free(this->serial_number);
-  free(this->manufacturer_string);
-  free(this->product_string);
-  free(this->port);
-  free(this->vendor_name );
-  free(this->id );
+void free_usb_device_info_subelements(struct usb_device_info_extendet * _this){
+  free(_this->device_node);
+  free(_this->serial_number);
+  free(_this->manufacturer_string);
+  free(_this->product_string);
+  free(_this->port);
+  free(_this->vendor_name );
+  free(_this->id );
 }
 
-void free_enumerate_usb_devices(struct usb_device_info_extendet * this){
-  while( this != NULL){
-    struct usb_device_info_extendet * next = this->next;
-    free_usb_device_info_subelements(this);
-    free(this);
-    this = next;
+void free_enumerate_usb_devices(struct usb_device_info_extendet * _this){ 
+  while( _this != NULL){
+    struct usb_device_info_extendet * next = _this->next;
+    free_usb_device_info_subelements(_this);
+    free(_this);
+    _this = next;
   }
 }  
 
@@ -663,7 +663,7 @@ int detect_relay_controller_nuvoton(char* portname, uint8_t* num_relays, char* s
     #endif  
 
     // create a new instance of relay_info
-    (*relay_info)->next = malloc(sizeof(relay_info_t));  
+    (*relay_info)->next = ( struct relay_info* ) malloc(sizeof(relay_info_t));  
     assert((*relay_info)->next);
     *relay_info = (*relay_info)->next;
     (*relay_info)->next = NULL;
@@ -727,14 +727,14 @@ static int get_relay_state(hid_device *handle, uint16_t *bitmap)
      printf("\n"); 
   #endif
 
-  if (hid_write(handle, hid_msg.raw, sizeof(hid_msg)) <= 0) {
+  if (hid_write(handle, (unsigned char*)hid_msg.raw, sizeof(hid_msg)) <= 0) {
     perror("Failed to write to HID device");
     return FAILURE;
   }
 
   // Read response
   memset(hid_msg.raw,0,sizeof(hid_msg));
-  if (hid_read(handle, hid_msg.raw, sizeof(hid_msg)) < 0) {
+  if (hid_read(handle, (unsigned char*)hid_msg.raw, sizeof(hid_msg)) < 0) {
     perror("Failed to read from HID device");
     return FAILURE;
   }
@@ -780,7 +780,7 @@ static int set_relays(hid_device *handle, uint16_t bitmap)
     printf("Set relays = 0x%04x\n", bitmap);
   #endif
 
-  if (hid_write(handle, hid_msg.raw, sizeof(hid_msg)) < 0)
+  if (hid_write(handle, (unsigned char*)hid_msg.raw, sizeof(hid_msg)) < 0)
     return FAILURE;
 
   return SUCCESS;
@@ -821,7 +821,7 @@ int get_relay_nuvoton(char* portname, uint8_t relay, relay_state_t* relay_state,
     return FAILURE;
   }
 
-  *relay_state = relay_states & ( 1 << (relay-1)) ;
+  *relay_state = (relay_state_t) (relay_states & ( 1 << (relay-1))) ;
 
   #ifdef DEBUG
     char str[20];
