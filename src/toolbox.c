@@ -22,6 +22,8 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 /* Linux */
 #include <glib.h>
@@ -52,11 +54,11 @@ sds sdsbytes2hex(void * byte_str, int bytes, int block_size) {
 }  
 
 // Convert int to binary string
-sds sdsint2bin(long int value ,int len) {
+sds sdsint2bin(long int value ,unsigned int len) {
   char buffer[65];
   sds str;
 
-  if(len+1 > (int)sizeof(buffer) ) len = sizeof(buffer)-1;
+  if(len+1 > sizeof(buffer)) len = sizeof(buffer)-1;
   buffer[len] = 0;
   for (int i = len-1; i >= 0; i--) 
     buffer[i] = value & (1<<(len-i-1)) ? '1' : '0';
@@ -169,7 +171,7 @@ sds file_permission_needed(char * path, int access_type){
   access_type &= 7;
 
   if (stat(path, &stat_buffer) )
-    return sdsnew("File does not exists or is inaccessible");
+    return sdsnew("does not exists or is inaccessible");
 
   if ( !access(path, access_type) ) 
     return sdsempty();
@@ -250,6 +252,57 @@ void finddir_free(GList *list){
   GList *iterator = NULL;
 
   for (iterator = list; iterator; iterator = iterator->next) {
-    sdsfree((sds)iterator->data);
+    sdsfree((char *)iterator->data);
   }
+}
+
+// Reaad file into memory
+void * file_get(char * file_name, int *length) {
+
+  int _length = 0;
+
+  if ( length != NULL ) 
+    *length = 0;
+
+  // Opren File
+  int file_descriptor = open(file_name, O_RDONLY);
+  if ( file_descriptor <= 0 ) {
+    perror(file_name);
+    return NULL;
+  }
+  
+  // Find length of file
+  _length = lseek(file_descriptor, 0, SEEK_END);
+  if ( _length < 0 ) {
+    perror(file_name);
+    return NULL;
+  }
+
+  // Read into memory
+  void *address = mmap(NULL, _length, PROT_READ, MAP_PRIVATE, file_descriptor, 0);
+  if(address == MAP_FAILED){
+    perror("file_get failed");
+    return NULL;
+  }
+
+  if ( length != NULL ) 
+    *length = _length;
+
+  return address;
+}
+
+// Write memory to file
+int file_put( char *file_name, void *data, int length ) {
+
+  int file_descriptor = open(file_name, O_WRONLY |O_CREAT, 0666);
+  if ( file_descriptor <= 0 ) {
+    perror("file_put error");
+    return FAILURE;
+  }
+
+  int rc = write(file_descriptor, data, length);
+
+  close(file_descriptor);
+
+  return rc;
 }

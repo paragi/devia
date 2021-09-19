@@ -62,6 +62,7 @@ int probe_w1(int si_index, struct _device_identifier id, GList **device_list){
   if ( id.device_id ) {
     struct dirent *dp;
     DIR *dir;
+    sds filename;
 
     path_list = g_list_append(path_list, id.device_id);
 
@@ -78,11 +79,15 @@ int probe_w1(int si_index, struct _device_identifier id, GList **device_list){
           if ( dp->d_type != DT_REG )  
             continue;
 
-          printf("  %s\n", dp->d_name);
+          filename = sdscatprintf(sdsempty(),"%s/%s",path,dp->d_name);
+          printf("  %s  %s\n", dp->d_name, file_permissions_string(filename));
+          sdsfree(filename);
         }
+        sdsfree(path); 
+
         puts("");
         closedir(dir);
-      } 
+      }
     }
 
   // find dir  
@@ -168,13 +173,14 @@ int action_w1(struct _device_list *device, sds attribute, sds action, sds *reply
 
     // Write to device attribute
     if ( action ) {
-      printf("Writing to %s : %s\n", attribute, action);
       length = write( fd , action, sdslen(action) );
       if ( length < 0 ) {
         perror( "unable to write to attribute" );
         *reply = sdsnew("**output error**");
         close( fd );
         return FAILURE;
+      } else {
+        *reply = sdscatprintf(sdsempty(),"%s %s",attribute,action);
       }
 
     // read from device attribute
@@ -200,7 +206,24 @@ int action_w1(struct _device_list *device, sds attribute, sds action, sds *reply
     sdsfree(file_path);
   
   // List attributes
-  } 
+  } else {
+    struct dirent *dp;
+    DIR * dir = opendir(device->path);
+
+    if (dir) {
+      while ((dp = readdir(dir)) != NULL) {
+        if ( !strcmp(dp->d_name, ".") != 0 || !strcmp(dp->d_name, "..") ) 
+          continue;
+
+        if ( dp->d_type != DT_REG )   
+          continue;
+
+        *reply = sdscatprintf(*reply," %s", dp->d_name);
+      }
+      puts("");
+      closedir(dir);
+    } 
+  }
 
   return SUCCESS;
 }

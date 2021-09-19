@@ -32,7 +32,7 @@
   };
 
   // Public functions
-  int detect_relay_controller_nuvoton(char* address, uint8_t* num_relays, char* serial, relay_info_t** relay_info);
+  int detect_relay_controller_nuvoton(char* portname, uint8_t* num_relays, char* serial, relay_info_t **relay_info);
   int get_relay_nuvoton(char* address, uint8_t relay, relay_state_t* relay_state, char* serial);
   int set_relay_nuvoton(char* address, uint8_t relay, relay_state_t relay_state, char* serial);
 #endif

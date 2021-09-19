@@ -6,7 +6,7 @@
 #include "sds.h"
 
 // SDS extensions
-sds sdsint2bin(long int value, int len );
+sds sdsint2bin(long int value ,unsigned int len);
 sds sdsbytes2hex(void * byte_str, int bytes, int block_size);
 
 // char * extensions
@@ -19,5 +19,7 @@ sds file_permission_needed(char * path, int access_type);
 sds file_permissions_string(char * path);
 GList *finddir(char *basepath, char *searchdir);
 void finddir_free(GList *list);
+int file_put( char *file_name, void *data, int length );
+void * file_get(char * file_name, int *length);
 
 #endif
