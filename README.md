@@ -8,6 +8,7 @@
 
 
 A command-line tool for easy and uniform access to attached devices.
+
 Easy integration of devices to smart home system, node read etc.
 
 
