@@ -19,12 +19,12 @@ The device identification looks like this: **hidusb#0416:5020::Nuvoton#**
 
 Example get relay state:
 
-> devia hidudb#0416:5020 1
+\> devia hidudb#0416:5020 1
 hidusb#0416:5020::Nuvoton#0002:0005:00 1 on
 
 Example set all relays off
 
-> devia hidudb#0416:5020 all off 
+\> devia hidudb#0416:5020 all off 
 hidusb#0416:5020::Nuvoton#0002:0005:00 all 0000000000000000
 
 action can be both 0/1 and off/on
@@ -41,12 +41,12 @@ The device identification looks like this: **w1#28-011581cb99ff**
 
 Example get temperature:
 
-> devia w1#28-011581cb99ff temperature
+\> devia w1#28-011581cb99ff temperature
 w1#28-011581cb99ff temperature 24725
 
 Example set resolution to 9 bits:
 
-> devia w1#28-011581cb99ff resolution 9
+\> devia w1#28-011581cb99ff resolution 9
 w1#28-011581cb99ff resolution 9
 
 
