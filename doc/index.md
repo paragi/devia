@@ -1,22 +1,4 @@
-Device interact 
-
-Command line tool, to interact with various devices.
-
-Often used for Smart home or office solutions, to interact with relays, sensors and other equitment.
-made for linux compatible platform, including debian, Raspberry-PI, Ubuntu and the likes.
-
-
-## Supported devices:
-
-* [[HID USB]]
-* [[One-wire]]
-* [[SysFS]] generic sysfs 
-
-
-
-
-
-## Usages
+# Usages
 
 devia [<options>] [<device identifier> [<attribute> [<action]]]
 
@@ -41,12 +23,10 @@ If the identifier is ambiguous, multiple matching devices are affected.
 
 
 
+[Supported devices](interface.md)
+[Application](application.md)
+[Installation](install.md)
 
-
-
-
-
-[Installation and compilation]
 
  
 

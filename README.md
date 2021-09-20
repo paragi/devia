@@ -7,19 +7,18 @@
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/paragi)
 
 
-A command-line tool for easy and uniform access to attached devices.
-
-Easy integration of devices to smart home system, node read etc.
-
+* Command-line tool for easy and uniform access to attached devices.
+* Interact with sensors, relays and other smart home devices.
+* Easy integration to smart home systems and devices of all kinds.
 
 **Note:** Early version. please wait for a stable version, if you want to include it to your project.
 
 
 ### Usages
 
-    devia [<options>] [<device id> [<attribute> [<action>]]]
+    devia [<options>] [<device id> [<device attribute> [<action>]]]
 
-See [documentation](doc/index.md) to learn more  
+See [documentation](doc/index.md) for a detailed and complete description.
 
 **Example 1** - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
 
@@ -54,6 +53,12 @@ or ommit the action (last parameter) and read
     ...
 
 Devia also has a --info option, to help identify devices and problems, that provides a lot of extra information.
+
+# Applications
+
+* [IKEA buttons controling relays, with node-red on reapberry-pi](doc/ikea.md)
+* [Zigbee setup](doc/zigbee-dongle.md)
+* [Controlling relays from Python, PHP, JS node and other languages](doc/scripts)
 
 # Supported devices
 
