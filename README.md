@@ -6,7 +6,10 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/paragi/devia/total)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/paragi)
 
-A command-line tool to interact with various peripherel devices, attached to a computer, Raspberry-Pi etc.
+
+A command-line tool for easy and uniform access to attached devices.
+Easy integration of devices to smart home system, node read etc.
+
 
 **Note:** Early version. please wait for a stable version, if you want to include it to your project.
 
