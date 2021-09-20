@@ -62,15 +62,7 @@ Devia also has a --info option, to help identify devices and problems, that prov
 
 # Supported devices
 
-The following interfaceses are supported. 
-Devices are listed under each interface.
-
-* [HID USB](doc/hidusb.md)
-* [one-wire](doc/w1)
-* [SysFs](doc/sysfs.md)
-* [GPIO](doc/gpio.md) (empty)
-* [com](doc/com.md) (empty)
-
+The complete [list of supported devices](doc/supported_devices.md)
 
 If you would like devia to have a particular device included, you can ask me to do so. 
 Depending on complexity and gennerel interest, I will add devices on request, when i have the time available.
