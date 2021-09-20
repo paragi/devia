@@ -35,8 +35,11 @@ If the identifier is ambiguous, multiple matching devices are affected.
 
 
 
+    
 [Supported devices](interface.md)
+    
 [Application](application.md)
+    
 [Installation](install.md)
 
 
