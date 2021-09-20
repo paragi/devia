@@ -3,6 +3,8 @@
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 [![Issues](http://img.shields.io/github/issues/paragi/devia.svg)]( https://github.com/Paragi/devia/issues )
 [![GitHub pull-requests](https://img.shields.io/github/issues-pr/paragi/devia.svg)](https://GitHub.com/paragi/devia/pull/)
+![GitHub all releases](https://img.shields.io/github/downloads/paragi/devia/total)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/paragi)
 
 A command-line tool to interact with various peripherel devices, attached to a computer, Raspberry-Pi etc.
 
