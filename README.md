@@ -6,8 +6,9 @@
 
 A command-line tool to interact with various peripherel devices, attached to a computer, Raspberry-Pi etc.
 
+**Note:** Early version. please wait for a stable version, if you want to include it to your project.
 
-Example 1 - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
+#### Example 1 - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
 
     > devia hidudb#0416:5020 1 on
     hidusb#0416:5020::Nuvoton#0002:0005:00 1 on
@@ -17,7 +18,7 @@ or ommit the action (last parameter) and read
     > devia hidudb#0416:5020 1 
     hidusb#0416:5020::Nuvoton#0002:0005:00 1 on
   
-Example 2 - list attached devices
+#### Example 2 - list attached devices
 
     > devia --list
     Nuvoton relay controler  id: hidusb#0416:5020::Nuvoton#0001:003b:00
@@ -30,7 +31,7 @@ Example 2 - list attached devices
     One-wire device  id: w1#28-0115818eebff 
 
 
-Example 3 - Continuosly read chages in temperatur
+#### Example 3 - Continuosly read chages in temperatur
 
     > devia --monitor --changes w1#28-0000057eafe6 temperature
     w1#28-0000057eafe6 temperature 24750
@@ -46,11 +47,11 @@ Devia also has a --info option, to help identify devices and problems, that prov
 The following interfaceses are supported. 
 Devices are listed under each interface.
 
-[HID USB](doc/hidusb.md)
-[one-wire](doc/w1)
-[SysFs](doc/sysfs.md)
-[GPIO](doc/gpio.md) (empty)
-[com](doc/com.md) (empty)
+* [HID USB](doc/hidusb.md)
+* [one-wire](doc/w1)
+* [SysFs](doc/sysfs.md)
+* [GPIO](doc/gpio.md) (empty)
+* [com](doc/com.md) (empty)
 
 
 If you would like devia to have a particular device included, you can ask me to do so. 
