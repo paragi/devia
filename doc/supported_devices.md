@@ -15,5 +15,5 @@ The HIDAPI enumeration returns a device node path. As the device node changes, w
 The Nuvoton HID relay controler can only be destinquised from the Saintsmart relay controler, by the manufacturer_string.
 The device identification looks like this:
 
-  **hidusb#0416:5020::Nuvoton#** |  ![](image/relay-controler-nuvoton.png)  |
+  **hidusb#0416:5020::Nuvoton#** |  ![Alt text](image/relay-controler-nuvoton.png)  |
 |  |  |
