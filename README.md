@@ -10,7 +10,7 @@ A command-line tool to interact with various peripherel devices, attached to a c
 
 **Note:** Early version. please wait for a stable version, if you want to include it to your project.
 
-#### Example 1 - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
+**Example 1** - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
 
     > devia hidudb#0416:5020 1 on
     hidusb#0416:5020::Nuvoton#0002:0005:00 1 on
@@ -20,7 +20,7 @@ or ommit the action (last parameter) and read
     > devia hidudb#0416:5020 1 
     hidusb#0416:5020::Nuvoton#0002:0005:00 1 on
   
-#### Example 2 - list attached devices
+**Example 2** - list attached devices
 
     > devia --list
     Nuvoton relay controler  id: hidusb#0416:5020::Nuvoton#0001:003b:00
@@ -33,7 +33,7 @@ or ommit the action (last parameter) and read
     One-wire device  id: w1#28-0115818eebff 
 
 
-#### Example 3 - Continuosly read chages in temperatur
+**Example 3** - Continuosly read chages in temperatur
 
     > devia --monitor --changes w1#28-0000057eafe6 temperature
     w1#28-0000057eafe6 temperature 24750
