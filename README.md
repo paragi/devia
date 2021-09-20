@@ -14,6 +14,13 @@ Easy integration of devices to smart home system, node read etc.
 
 **Note:** Early version. please wait for a stable version, if you want to include it to your project.
 
+
+### Usages
+
+    devia [<options>] [<device id> [<attribute> [<action>]]]
+
+See [documentation](doc/index.md) to learn more  
+
 **Example 1** - controle a relay: on hid/usb interface, relay controler defined by vendor id 0416:5020, set relay 1 on.
 
     > devia hidudb#0416:5020 1 on
