@@ -2,10 +2,10 @@
 
 ## HID/UDB interface
 
-**Nuvoton relay controller** ![](image/relay-controller-nuvoton.png) ![](image/relay-controller-nuvoton16.png) 
+| **Nuvoton relay controller** | USB HID relay controller board, from Nuvoton - Winbond Electronics Corp. |
 
-USB HID relay controller board, from Nuvoton - Winbond Electronics Corp. 
 This relay USB controller is almost identical to the Sainsmart 16-channel controller, except that the state of the relays are in bit-order from 0 to 16, LSB first.
+![](image/relay-controller-nuvoton.png) ![](image/relay-controller-nuvoton16.png) 
 
 It's a Chinese product with precious little and useless [documentation](https://www.cafago.com/en/p-e1812-1.html) and support.
 
