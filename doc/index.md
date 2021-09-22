@@ -36,7 +36,7 @@ If the identifier is ambiguous, multiple matching devices are affected.
 
 
     
-[Supported devices](interface.md)
+[Supported devices](supported_devices.md)
     
 [Application](application.md)
     
