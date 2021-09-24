@@ -189,8 +189,10 @@ int action_w1(struct _device_list *device, sds attribute, sds action, sds *reply
     	do {
         length = read(fd,input, sizeof(input)-1 );
         if( length >= 0 ) {
-          input[length+1] = 0;
-          *reply = sdscat(*reply,input);
+          sds data;
+          input[length] = 0;
+          data = sdstrim(sdsnew(input),NULL);
+          *reply = sdscat(*reply,data);
         }
       }while (length == sizeof(input)-1 );
 

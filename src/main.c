@@ -96,7 +96,7 @@ static struct argp_option options[] = {
   // {NAME, KEY, ARG, FLAGS, DOC} see: https://www.gnu.org/software/libc/manual/html_node/Argp-Option-Vectors.html
   {"list",      'l', 0, 0, "List devices" },
   {"info",      'i', 0, 0, "info readout"},
-  {"monitor",   'm', 0, OPTION_ARG_OPTIONAL, "Monitor device"},
+  {"monitor",   'm', "milliseconds", OPTION_ARG_OPTIONAL, "Monitor device"},
   {"changes",   'c', 0, 0, "Show only changes when monitoring"},
   {"supported", 's', 0, 0, "List supported devices"},
   { 0 }
@@ -320,7 +320,7 @@ int main (int argc, char **argv) {
     } else
       break;  
 
-  } while ( 1 );
+  } while ( argument.monitor );
 
   //g_list_free(device_list);
   exit (0);

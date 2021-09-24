@@ -709,6 +709,7 @@ sds sdstrim(sds s, const char *cset) {
     char *start, *end, *sp, *ep;
     size_t len;
 
+    if ( cset == NULL ) cset = " \r\n\f\v\t";
     sp = start = s;
     ep = end = s+sdslen(s)-1;
     while(sp <= end && strchr(cset, *sp)) sp++;
