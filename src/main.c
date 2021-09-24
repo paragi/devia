@@ -97,7 +97,7 @@ static struct argp_option options[] = {
   {"list",      'l', 0, 0, "List devices" },
   {"info",      'i', 0, 0, "info readout"},
   {"monitor",   'm', 0, OPTION_ARG_OPTIONAL, "Monitor device"},
-  {"changes",   'c', 0, 0, "changes"},
+  {"changes",   'c', 0, 0, "Show only changes when monitoring"},
   {"supported", 's', 0, 0, "List supported devices"},
   { 0 }
 };
