@@ -96,6 +96,8 @@ static struct argp_option options[] = {
   // {NAME, KEY, ARG, FLAGS, DOC} see: https://www.gnu.org/software/libc/manual/html_node/Argp-Option-Vectors.html
   {"list",      'l', 0, 0, "List devices" },
   {"info",      'i', 0, 0, "info readout"},
+  {"monitor",   'm', "milliseconds", OPTION_ARG_OPTIONAL, "Monitor device"},
+  {"changes",   'c', 0, 0, "Show only changes when monitoring"},
   {"supported", 's', 0, 0, "List supported devices"},
   { 0 }
 };
@@ -105,6 +107,9 @@ struct arguments {
   int list;       // -l
   int info;    // -i
   int list_supported_devices; // -s
+  int monitor; // -m
+  int milliseconds;
+  int changes; // -c
   int no_arg;
   struct _device_identifier id;
   char * attribute;
@@ -116,6 +121,8 @@ void print_arguments(struct arguments argument) {
   printf("  list devices:           %s\n", argument.list ? "true" : "false");
   printf("  list supported devices: %s\n", argument.list_supported_devices ? "true" : "false");
   printf("  Show extra info:        %s\n", argument.info ? "true" : "false");
+  printf("  Monitor device (%dms):  %s\n", argument.milliseconds, argument.no_arg ? "true" : "false");
+  printf("  Changes only:           %s\n", argument.changes ? "true" : "false");
   printf("  no arguments:           %s\n", argument.no_arg ? "true" : "false");
   printf("  device identifier:\n");
   printf("     interface:   %s\n", argument.id.interface); 
@@ -140,7 +147,14 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case 's':
       argument->list_supported_devices = true;
+      break;    
+    case 'm':
+      argument->monitor = true;
+      argument->milliseconds = arg ? atoi(arg) : 500;
       break;
+    case 'c':
+      argument->changes = true;
+      break;  
     case ARGP_KEY_ARG:
       /* There are remaining arguments not parsed by any parser, which may be found
       starting at (STATE->argv + STATE->next).  If success is returned, but
@@ -272,25 +286,41 @@ int main (int argc, char **argv) {
   if ( !g_list_length(device_list) )
     puts("No devices found");
 
-  else for (iterator = device_list; iterator; iterator = iterator->next) {
-    entry = (struct _device_list *)iterator->data;
+  else do {
+    int start_time_clk = clock();
+    int sleep_time_ms = 0;
 
-    assert(entry->name);
-    assert(entry->id);
- 
-    // List device and group owner (to discourage use of root privilliges)  
-    if (argument.list) {
-      printf("%s  id: %s",entry->name, entry->id);
-      if ( sdslen(entry->path) ) printf(" Path: %s",entry->path);
-      if ( sdslen(entry->group) ) printf(" Group: %s",entry->group);
-      puts("");
-    // Interact with matched devices
-    } else {
-      sds reply = sdsempty();
-      entry->action(entry, argument.attribute, argument.action, &reply);
-      printf("%s %s\n",entry->id, reply[0] ? reply : "No reply");
+    for (iterator = device_list; iterator; iterator = iterator->next) {
+      entry = (struct _device_list *)iterator->data;
+
+      assert(entry->name);
+      assert(entry->id);
+   
+      // List device and group owner (to discourage use of root privilliges)  
+      if (argument.list) {
+        printf("%s  id: %s",entry->name, entry->id);
+        if ( sdslen(entry->path) ) printf(" Path: %s",entry->path);
+        if ( sdslen(entry->group) ) printf(" Group: %s",entry->group);
+        puts("");
+      // Interact with matched devices
+      } else {
+        sds reply = sdsempty();
+        entry->action(entry, argument.attribute, argument.action, &reply);
+        if ( !argument.changes || !entry->reply || sdscmp(entry->reply, reply) )
+          printf("%s %s\n",entry->id, reply[0] ? reply : "No reply");
+        if ( entry->reply) sdsfree(entry->reply); 
+        entry->reply = reply;
+      }
     }
-  }
+
+    if( argument.monitor || !argument.list ) {
+      sleep_time_ms = argument.milliseconds - ( start_time_clk - clock() ) * 1000 / CLOCKS_PER_SEC;
+      if ( sleep_time_ms > 10 ) usleep( sleep_time_ms * 1000 );
+
+    } else
+      break;  
+
+  } while ( argument.monitor );
 
   //g_list_free(device_list);
   exit (0);

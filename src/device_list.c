@@ -76,8 +76,6 @@ const struct _supported_device serial_device[] =
   { NULL }
 };
 
-
-
 const struct _supported_device usb_device[] = 
 {
   { NULL }
