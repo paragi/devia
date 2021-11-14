@@ -1,0 +1,518 @@
+~$ emhætte off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B 0000 AA00 0000 0000 0000 0000 0000 
+Relay state = 0000000000000000
+Setting relay state:
+Send HID repport:     C30E 0000 0000 0000 0000 4849 4443 E901 
+Relay state = 0000000000000000
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+
+~$ emhætte off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B 0000 AA00 0000 0000 0000 0000 0000 
+Relay state = 0000000000000000
+Setting relay state:
+Send HID repport:     C30E 0000 0000 0000 0000 4849 4443 E901 
+Relay state = 0000000000000000
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+
+~$ emhætte 
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 (null)
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B 0000 AA00 0000 0000 0000 0000 0000 
+Relay state = 0000000000000000
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+
+~$ emhætte on
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 on
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B 0000 AA00 0000 0000 0000 0000 0000 
+Relay state = 0000000000000000
+Setting relay state:
+Send HID repport:     C30E 0100 0000 0000 0000 4849 4443 EA01 
+Relay state = 0000000000000001
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 on
+
+~$ emhætte off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B 0001 AA00 0000 0000 0000 0000 0000 
+Relay state = 0000000000000001
+Setting relay state:
+Send HID repport:     C30E 0000 0000 0000 0000 4849 4443 E901 
+Relay state = 0000000000000000
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+
+------------- Fejler ------------------------
+~$ emhætte on
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 on
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+
+
+----------- Hvor er modtagne pakke!??? ---------------- 
+Check hvad der sker, hvis der ikke kommer svar
+
+Setting relay state:
+Send HID repport:     C30E FFFF 0000 0000 0000 4849 4443 E703 
+Relay state = 1111111111111111
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 on
+~$ emhætte off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFF AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111111
+Setting relay state:
+Send HID repport:     C30E FEFF 0000 0000 0000 4849 4443 E603 
+Relay state = 1111111111111110
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+~$ emhætte off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFE AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111110
+Setting relay state:
+Send HID repport:     C30E FEFF 0000 0000 0000 4849 4443 E603 
+Relay state = 1111111111111110
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 off
+~$ emhætte on
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 on
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFE AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111110
+Setting relay state:
+Send HID repport:     C30E FFFF 0000 0000 0000 4849 4443 E703 
+Relay state = 1111111111111111
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 on
+~$ emhætte all off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 all
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFF AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111111
+Setting relay state:
+Send HID repport:     C30E FFFF 0000 0000 0000 4849 4443 E703 
+Relay state = 1111111111111111
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 on
+~$ emhætte 0
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              1
+  action:                 0
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFF AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111111
+Setting relay state:
+Send HID repport:     C30E FFFF 0000 0000 0000 4849 4443 E703 
+Relay state = 1111111111111111
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 on
+~$ cat emhætte 
+ssh admin@hus devia/devia -i hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 1 $1
+
+~$ ^C
+~$ ssh admin@hus devia/devia -i hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 0 0
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              0
+  action:                 0
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFF AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111111
+Setting relay state:
+Send HID repport:     C30E FFFF 0000 0000 0000 4849 4443 E703 
+Relay state = 1111111111111111
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 all 1111111111111111
+~$ ssh admin@hus devia/devia -i hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 all off
+Argument interpretation:
+  list devices:           false
+  list supported devices: false
+  Show extra info:        true
+  Monitor device (0ms):  false
+  Changes only:           false
+  no arguments:           false
+  device identifier:
+     interface:   hidusb
+     device id:   0416:5020::Nuvoton
+     port:        1-1.4.1.4:1.0
+     device path: (null)
+  Attribute:              all
+  action:                 off
+Probing hidusb
+Found device at 1-1.4.1.4:1.0
+  Vendor: 0416:5020
+  Path: 1-1.4.1.4:1.0
+  Serial number: (null)
+  Release number: 0
+  Manufacturer_string: Nuvoton
+  Interface number 0
+  Product_string: HID Transfer
+  ---
+  Device name: Nuvoton relay controler
+  id: hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0
+  Port: 1-1.4.1.4:1.0
+  Path: /dev/hidraw3
+  Group: 
+  crw------- root:root not accessible
+Rading relay state:
+Sending HID repport:  D20E 1111 1111 1111 1111 4849 4443 8002 
+Recieved HID repport: D20B FFFF AA00 0000 0000 0000 0000 0000 
+Relay state = 1111111111111111
+Setting relay state:
+Send HID repport:     C30E 0000 0000 0000 0000 4849 4443 E901 
+Relay state = 0000000000000000
+hidusb#0416:5020::Nuvoton#1-1.4.1.4:1.0 all 0000000000000000
+
