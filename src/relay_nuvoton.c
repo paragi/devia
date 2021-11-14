@@ -181,7 +181,10 @@ int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *
   if ( info ) 
     puts("Rading relay state:");
 
-  return_code = get_nuvoton(handle, &relay_state); 
+  if ( !(return_code = get_nuvoton(handle, &relay_state))) { 
+    fprintf(stderr, "Unable to read HID API device %s",device->port);
+    return FAILURE;      
+  }
 
   if (action) {
     if ( info ) 
@@ -193,7 +196,10 @@ int action_nuvoton(struct _device_list *device, sds attribute, sds action, sds *
       relay_state |= mask; 
     if (!strcmp(strtolower(action), "toggle") )
       relay_state ^= mask;
-    return_code = set_nuvoton(handle, &relay_state); 
+    if ( !(return_code = set_nuvoton(handle, &relay_state))) { 
+      fprintf(stderr, "Unable to read HID API device %s",device->port);
+      return FAILURE;      
+    }
   } 
 
   if( relay_id > 0 )
