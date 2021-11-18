@@ -11,9 +11,6 @@
 * Interact with sensors, relays and other smart home devices.
 * Easy integration to smart home systems and devices of all kinds.
 
-**Note:** Early version. please wait for a stable version, if you want to include it to your project.
-
-
 ### Usages
 
     devia [<options>] [<device id> [<device attribute> [<action>]]]
